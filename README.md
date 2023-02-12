@@ -20,7 +20,11 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Debugger support for instruction decoder|❌||
 |Modular emulator|❌|support for module connection|
 |Configuration|❌||
-
+|ISA documentation|❌||
+|CPU exceptions|❌|No standard flow established|
+|Interrupts|❌||
+|CPU modes|❌|System and user mode|
+|Paging|❌||
 
 ## Core
 
