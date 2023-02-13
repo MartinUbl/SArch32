@@ -26,9 +26,11 @@ $loop:
 	cmpi r1, #40
 	bir.gt #-12
 	pop r1
-	svc #12
+	;svc #12
 	fw $videomem
 	lw r3, r0
+	movi r5, #7500
+$fillmem:
 	movi r4, #0xAA
 	sli r4, #8
 	addi r4, #0xAA
@@ -37,5 +39,9 @@ $loop:
 	sli r4, #8
 	addi r4, #0xAA
 	sw r4, r3
+	addi r3, #1
+	subi r5, #1
+	cmpi r5, #0
+	bi.gt $fillmem
 $hang:
 	bi $hang

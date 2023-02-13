@@ -36,16 +36,9 @@ class CDisplay_Widget : public QWidget
 		}
 
 		// triggers repainting, considering the memory obtained through the bus
-		void Trigger_Repaint(const IBus& bus);
+		void Trigger_Repaint(sarch32::CMemory_Bus& bus);
 
 		void paintEvent(QPaintEvent* event) override;
-};
-
-class CEvent_Proxy : public QObject {
-	Q_OBJECT
-
-	public:
-		//
 };
 
 /*

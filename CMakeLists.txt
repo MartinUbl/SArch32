@@ -6,7 +6,7 @@ SET(CMAKE_CXX_STANDARD 20)
 
 FIND_PACKAGE(Qt5 COMPONENTS Core Widgets)
 
-FILE(GLOB_RECURSE emulator_src emulator/*.cpp emulator/*.c emulator/*.h emulator/*.hpp)
+FILE(GLOB_RECURSE emulator_src emulator/*.cpp emulator/*.c emulator/*.h emulator/*.hpp emulator/*.qrc)
 FILE(GLOB_RECURSE assembler_src assembler/*.cpp assembler/*.c assembler/*.h assembler/*.hpp)
 
 FILE(GLOB_RECURSE core_src core/*.cpp core/*.h core/*.c core/*.hpp)
@@ -19,6 +19,7 @@ ADD_EXECUTABLE(SArch32_emulator ${emulator_src})
 
 TARGET_INCLUDE_DIRECTORIES(SArch32_emulator PUBLIC ${Qt5_INCLUDE_DIRS})
 SET_PROPERTY(TARGET SArch32_emulator PROPERTY AUTOMOC ON)
+SET_PROPERTY(TARGET SArch32_emulator PROPERTY AUTORCC ON)
 
 TARGET_LINK_LIBRARIES(SArch32_emulator SArch32_core Qt5::Core Qt5::Widgets)
 TARGET_LINK_LIBRARIES(SArch32_assembler SArch32_core)

@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>img/step.png</file>
+    <file>img/run.png</file>
+    <file>img/pause.png</file>
+	<file>img/logo.png</file>
+</qresource>
+</RCC>

@@ -46,6 +46,8 @@ Algorithms used and module decompositions are not the most effective ones. The d
 
 The emulator project defines a simple emulator, that creates a machine object and uses a Qt 5 libraries to display a simple GUI.
 
+![Emulator screenshot](misc/emulator_screenshot.png?raw=true "Screenshot of the emulator")
+
 ## License
 
 This software is distributed under the MIT license. Please, see attached LICENSE file for more information.

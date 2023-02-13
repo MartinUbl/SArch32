@@ -4,6 +4,8 @@
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
+#include <QtWidgets/QStatusBar>
+#include <QtWidgets/QMenuBar>
 #include <QtGui/QTextBlock>
 #include <QtGui/QTextLayout>
 #include <QtGui/QAbstractTextDocumentLayout>
@@ -201,6 +203,8 @@ void CMain_Window::On_Step_Requested() {
 	// request repaint
 	// TODO: do this only when the bus indicates video memory access to avoid overhead
 	mDisplay_Widget->Trigger_Repaint(mMachine->Get_Memory_Bus());
+
+	statusBar()->showMessage(tr("Step complete"));
 }
 
 void CMain_Window::On_Request_Repaint() {
@@ -217,10 +221,13 @@ void CMain_Window::On_Run_Requested() {
 	mRun_Thread = std::make_unique<std::thread>(&CMain_Window::Run_Thread_Fnc, this);
 
 	mIs_Running = true;
+	statusBar()->showMessage(tr("Running..."));
 }
 
 void CMain_Window::On_Pause_Requested() {
 	mIs_Running = false;
+
+	statusBar()->showMessage(tr("Paused"));
 }
 
 void CMain_Window::On_Decimal_Fmt_Selected() {
@@ -243,15 +250,21 @@ void CMain_Window::Run_Thread_Fnc() {
 
 	emit Request_Update_Button_State();
 
+	uint32_t pcPrev = mMachine->Get_CPU_Context().Reg(NRegister::PC);
+
 	while (mIs_Running) {
+
+		pcPrev = mMachine->Get_CPU_Context().Reg(NRegister::PC);
+
 		mMachine->Step(1, true);
 
 		if (mMachine->Get_Memory_Bus().Is_Video_Memory_Changed()) {
 			emit Request_Repaint();
-			mMachine->Get_Memory_Bus().Clear_Video_Memory_Changed_Flag();
 		}
 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		// detect stalling - an infinite loop
+		if (mMachine->Get_CPU_Context().Reg(NRegister::PC) == pcPrev)
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	emit Request_Update_Button_State();
@@ -272,8 +285,27 @@ void CMain_Window::On_Update_Button_State() {
 
 void CMain_Window::Setup_GUI() {
 
+	setWindowIcon(QIcon(":img/logo.png"));
 	setWindowTitle("SArch32 emulator");
 	setWindowState(Qt::WindowState::WindowMaximized);
+
+	QMenuBar* menuBar = new QMenuBar(this);
+	{
+		QMenu* fileMenu = new QMenu("&File", menuBar);
+		{
+			fileMenu->addAction("Exit");
+		}
+
+		menuBar->addMenu(fileMenu);
+
+		QMenu* helpMenu = new QMenu("&Help", menuBar);
+		{
+			helpMenu->addAction("About");
+		}
+
+		menuBar->addMenu(helpMenu);
+	}
+	setMenuBar(menuBar);
 
 	// central widget
 	QWidget* central = new QWidget(this);
@@ -290,22 +322,27 @@ void CMain_Window::Setup_GUI() {
 		{
 			ctlbox->setLayout(ctllay);
 
-			mStep_Button = new QPushButton("Step", ctlbox);
+			mStep_Button = new QPushButton(" Step", ctlbox);
 			mStep_Button->setEnabled(!mIs_Running);
+			mStep_Button->setIcon(QIcon(":img/step.png"));
 			connect(mStep_Button, SIGNAL(clicked()), this, SLOT(On_Step_Requested()));
 			ctllay->addWidget(mStep_Button);
 
-			mRun_Button = new QPushButton("Run", ctlbox);
+			mRun_Button = new QPushButton(" Run", ctlbox);
 			mRun_Button->setEnabled(!mIs_Running);
+			mRun_Button->setIcon(QIcon(":img/run.png"));
 			connect(mRun_Button, SIGNAL(clicked()), this, SLOT(On_Run_Requested()));
 			ctllay->addWidget(mRun_Button);
 
-			mPause_Button = new QPushButton("Pause", ctlbox);
+			mPause_Button = new QPushButton(" Pause", ctlbox);
 			mPause_Button->setEnabled(mIs_Running);
+			mPause_Button->setIcon(QIcon(":img/pause.png"));
 			connect(mPause_Button, SIGNAL(clicked()), this, SLOT(On_Pause_Requested()));
 			ctllay->addWidget(mPause_Button);
 
 			// TODO: more controls: Run, Pause, Step (5), Step (10), ...
+
+			ctllay->addStretch(1);
 		}
 
 		clay->addWidget(ctlbox, 0, 0, 1, 2);
@@ -424,7 +461,10 @@ void CMain_Window::Setup_GUI() {
 	connect(this, SIGNAL(Request_Update_Button_State()), this, SLOT(On_Update_Button_State()));
 	connect(this, SIGNAL(Request_Repaint()), this, SLOT(On_Request_Repaint()));
 
-	// immediatell refresh disassembly and register contents
+	statusBar()->setStyleSheet("QStatusBar{ border-top: 1px outset grey; }");
+	statusBar()->showMessage(tr("Ready"));
+
+	// immediatelly refresh disassembly and register contents
 	emit Refresh_Disassembly();
 	emit Refresh_Registers();
 	emit Request_Update_Button_State();
@@ -472,9 +512,15 @@ void CDisplay_Widget::paintEvent(QPaintEvent* event)
 	painter.end();
 }
 
-void CDisplay_Widget::Trigger_Repaint(const IBus& bus) {
+void CDisplay_Widget::Trigger_Repaint(sarch32::CMemory_Bus& bus) {
 
 	// TODO: solve this better, this is obviously ineffective, but serves as a starting point
+
+	if (!bus.Is_Video_Memory_Changed()) {
+		return;
+	}
+
+	bus.Clear_Video_Memory_Changed_Flag();
 
 	mDisplay_Buffer.resize(sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
 	bus.Read(sarch32::Video_Memory_Start, &mDisplay_Buffer[0], sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
