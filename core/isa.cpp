@@ -105,6 +105,7 @@ const std::unordered_map<std::string, NOpcode> Mnemonic_To_Opcode = {
 	{ "pop",  NOpcode::pop },
 	{ "fw",   NOpcode::fw },
 	{ "svc",  NOpcode::svc },
+	{ "aps",  NOpcode::aps },
 };
 
 // conversion map from opcode enum value to mnemonic string
@@ -141,6 +142,7 @@ const std::unordered_map<NOpcode, std::string> Opcode_To_Mnemonic = {
 	{ NOpcode::pop, "pop" },
 	{ NOpcode::fw, "fw" },
 	{ NOpcode::svc, "svc" },
+	{ NOpcode::aps, "aps" },
 };
 
 // retrieves register name using its enum value
@@ -327,11 +329,14 @@ class CInstruction_Generic_2Param : public CInstruction
 
 			// validate type
 
-			if (mSrc.Is_Register() && Is_Immediate_Instruction())
+			if (mSrc.Is_Register() && Is_Immediate_Instruction() && mOpcode != NOpcode::aps)
 				throw sarch32_parser_exception{ "Invalid parameter for instruction " + mnemonic + " - should be immediate value or symbol" };
 
-			if (!mSrc.Is_Register() && !Is_Immediate_Instruction())
+			if (!mSrc.Is_Register() && !Is_Immediate_Instruction() && mOpcode != NOpcode::aps)
 				throw sarch32_parser_exception{ "Invalid parameter for instruction " + mnemonic + " - should be register" };
+
+			if (mOpcode == NOpcode::aps && mSrc.Is_Register())
+				throw sarch32_parser_exception{ "Invalid parameter for instruction " + mnemonic + " - should be immediate value or symbol" };
 
 			return true;
 		};
@@ -339,7 +344,7 @@ class CInstruction_Generic_2Param : public CInstruction
 		virtual bool Parse_Binary(const uint32_t instruction) {
 			auto bytes = Decode_From_Bytes(instruction);
 
-			if (!Is_Immediate_Instruction()) {
+			if (!Is_Immediate_Instruction() && mOpcode != NOpcode::aps) {
 				auto pr = Decode_Register_Pair(bytes[1]);
 				mDst = pr.first;
 				mSrc = pr.second;
@@ -1036,6 +1041,48 @@ class CInstruction_Svc : public CInstruction_1Param<NOperand_Type::Immediate> {
 		}
 };
 
+/*
+ * APS instruction class
+ */
+class CInstruction_Aps : public CInstruction_Generic_2Param {
+	public:
+		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
+
+		virtual bool Execute(CCPU_Context& cpu) const {
+
+			// should not happen due to encoding, but check anyways
+			if (!mDst.Is_Register() || !mSrc.Is_Immediate())
+				return false;
+
+			if (!Check_Condition(mCondition, cpu))
+				return true;
+
+			auto checkPrivileged = [&]() {
+				if (cpu.State<NCPU_Mode>(NProcessor_State_Register::Mode) != NCPU_Mode::System)
+					throw undefined_instruction_exception();
+			};
+
+			NAPS_Request_Code reqCode = static_cast<NAPS_Request_Code>(mSrc.Get_Immediate());
+			switch (reqCode) {
+
+				case NAPS_Request_Code::None:
+					return true;
+
+				case NAPS_Request_Code::Get_Mode:
+					cpu.Reg(mDst.Get_Register()) = cpu.State(NProcessor_State_Register::Mode);
+					return true;
+
+				case NAPS_Request_Code::Set_Mode:
+					checkPrivileged();
+					cpu.State(NProcessor_State_Register::Mode) = cpu.Reg(mDst.Get_Register());
+					return true;
+			}
+
+			// unknown request code - ignore
+			return true;
+		}
+};
+
 // factor function type definition
 using TFactory_Fnc = std::unique_ptr<CInstruction>(*)(NOpcode, NCondition);
 
@@ -1078,6 +1125,7 @@ const std::unordered_map<NOpcode, TFactory_Fnc> Instruction_Factory_Map = {
 	{ NOpcode::pop, &InstrFactory<CInstruction_Pop> },
 	{ NOpcode::fw, &InstrFactory<CInstruction_Fw> },
 	{ NOpcode::svc, &InstrFactory<CInstruction_Svc> },
+	{ NOpcode::aps, &InstrFactory<CInstruction_Aps> },
 };
 
 // builds an instruction class from string

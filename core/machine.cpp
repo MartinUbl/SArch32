@@ -166,6 +166,8 @@ namespace sarch32 {
 		mContext.Reg(NRegister::PC) = Reset_Vector;		// reset PC to a reset vector
 		mContext.Reg(NRegister::FLG) = 0;				// reset flags
 
+		mContext.State(NProcessor_State_Register::Mode) = static_cast<uint32_t>(NCPU_Mode::System);	// starts in system mode
+
 		mInterrupt_Ctl.Clear_IRQ_Flag(IRQ_Channel_Any);
 
 		// cold reset erases memory (or at least generates a garbagge or zeroes)
