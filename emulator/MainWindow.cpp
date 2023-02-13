@@ -24,6 +24,8 @@ CMain_Window::CMain_Window(const std::string& memSObjFile)
 	if (!mMachine->Init_Memory_From_File(memSObjFile)) {
 		QMessageBox::critical(nullptr, "Error", "Could not load memory object file");
 	}
+
+	mDisplay = mMachine->Attach_Peripheral<sarch32::CDisplay_300x200>();
 }
 
 void CMain_Window::On_Refresh_Registers() {
@@ -201,14 +203,13 @@ void CMain_Window::On_Step_Requested() {
 	emit Update_View_PC();
 
 	// request repaint
-	// TODO: do this only when the bus indicates video memory access to avoid overhead
-	mDisplay_Widget->Trigger_Repaint(mMachine->Get_Memory_Bus());
+	mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
 
 	statusBar()->showMessage(tr("Step complete"));
 }
 
 void CMain_Window::On_Request_Repaint() {
-	mDisplay_Widget->Trigger_Repaint(mMachine->Get_Memory_Bus());
+	mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
 }
 
 void CMain_Window::On_Run_Requested() {
@@ -258,7 +259,7 @@ void CMain_Window::Run_Thread_Fnc() {
 
 		mMachine->Step(1, true);
 
-		if (mMachine->Get_Memory_Bus().Is_Video_Memory_Changed()) {
+		if (mDisplay->Is_Video_Memory_Changed()) {
 			emit Request_Repaint();
 		}
 
@@ -526,15 +527,15 @@ void CDisplay_Widget::paintEvent(QPaintEvent* event)
 	painter.end();
 }
 
-void CDisplay_Widget::Trigger_Repaint(sarch32::CMemory_Bus& bus) {
+void CDisplay_Widget::Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus) {
 
 	// TODO: solve this better, this is obviously ineffective, but serves as a starting point
 
-	if (!bus.Is_Video_Memory_Changed()) {
+	if (!display->Is_Video_Memory_Changed()) {
 		return;
 	}
 
-	bus.Clear_Video_Memory_Changed_Flag();
+	display->Clear_Video_Memory_Changed_Flag();
 
 	mDisplay_Buffer.resize(sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
 	bus.Read(sarch32::Video_Memory_Start, &mDisplay_Buffer[0], sarch32::Video_Memory_End - sarch32::Video_Memory_Start);

@@ -18,14 +18,6 @@ namespace sarch32 {
 
 	void CMemory_Bus::Read(uint32_t address, void* target, uint32_t size) const {
 
-		// TODO: this should be more modular
-
-		// video memory connected to bus
-		if (address >= Video_Memory_Start && address + size <= Video_Memory_End) {
-			std::copy_n(mVideo_Memory.begin() + (address - Video_Memory_Start), size, reinterpret_cast<uint8_t*>(target));
-			return;
-		}
-
 		// peripheral memory
 		for (auto mapping : mPeripheral_Memory) {
 			if (address >= mapping.addressStart && address < mapping.addressStart + mapping.length) {
@@ -42,15 +34,6 @@ namespace sarch32 {
 	}
 
 	void CMemory_Bus::Write(uint32_t address, const void* source, uint32_t size) {
-
-		// TODO: this should be more modular
-
-		// video memory connected to bus
-		if (address >= Video_Memory_Start && address + size < Video_Memory_End) {
-			std::copy_n(reinterpret_cast<const uint8_t*>(source), size, mVideo_Memory.begin() + (address - Video_Memory_Start));
-			mVideo_Mem_Changed = true;
-			return;
-		}
 
 		// peripheral memory
 		for (auto mapping : mPeripheral_Memory) {
@@ -129,19 +112,6 @@ namespace sarch32 {
 		*/
 	}
 
-	void CMemory_Bus::Clear_Video_Memory() {
-		// black screen
-		std::fill(mVideo_Memory.begin(), mVideo_Memory.end(), 0);
-	}
-
-	bool CMemory_Bus::Is_Video_Memory_Changed() const {
-		return mVideo_Mem_Changed;
-	}
-
-	void CMemory_Bus::Clear_Video_Memory_Changed_Flag() {
-		mVideo_Mem_Changed = false;
-	}
-
 	/***********************************************************************************
 	 * Interrupt controller
 	 ***********************************************************************************/
@@ -202,9 +172,6 @@ namespace sarch32 {
 		if (!warm) {
 			mMem_Bus.Clear_Main_Memory();
 		}
-
-		// always clear video memory
-		mMem_Bus.Clear_Video_Memory();
 	}
 
 	void CMachine::Step(size_t numberOfSteps, bool handleIRQs) {

@@ -20,6 +20,7 @@
 
 #include "../core/isa.h"
 #include "../core/machine.h"
+#include "../core/peripherals/display.h"
 
 /*
  * Display widget (300x200 "display" of the machine)
@@ -36,7 +37,7 @@ class CDisplay_Widget : public QWidget
 		}
 
 		// triggers repainting, considering the memory obtained through the bus
-		void Trigger_Repaint(sarch32::CMemory_Bus& bus);
+		void Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus);
 
 		void paintEvent(QPaintEvent* event) override;
 };
@@ -70,6 +71,8 @@ class CMain_Window : public QMainWindow {
 		std::unique_ptr<sarch32::CMachine> mMachine;
 		// path to the memory object file used
 		std::string mObject_File;
+		// display peripheral
+		std::shared_ptr<sarch32::CDisplay_300x200> mDisplay;
 
 		// structure helper for finding the location of PC
 		struct TSection_Break {

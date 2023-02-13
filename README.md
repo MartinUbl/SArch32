@@ -15,9 +15,10 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Memory bus|✅||
 |Emulator core|✅||
 |300x200 emulated display|✅|video memory mapped to bus|
-|Peripheral mappings|❌||
+|Peripheral mappings|✅||
 |Extended debugger|⏳|Run+pause|
 |Debugger support for instruction decoder|❌||
+|Memory dump|❌||
 |Modular emulator|❌|support for module connection|
 |Configuration|❌||
 |ISA documentation|❌||
