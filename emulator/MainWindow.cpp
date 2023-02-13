@@ -289,18 +289,25 @@ void CMain_Window::Setup_GUI() {
 	setWindowTitle("SArch32 emulator");
 	setWindowState(Qt::WindowState::WindowMaximized);
 
+	/*
+	 * Application top menu bar
+	 */
 	QMenuBar* menuBar = new QMenuBar(this);
 	{
+		// "File" menu
 		QMenu* fileMenu = new QMenu("&File", menuBar);
 		{
-			fileMenu->addAction("Exit");
+			auto quitAction = fileMenu->addAction("&Exit");
+			connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
 		}
 
 		menuBar->addMenu(fileMenu);
 
+		// "Help" menu
 		QMenu* helpMenu = new QMenu("&Help", menuBar);
 		{
-			helpMenu->addAction("About");
+			auto aboutAction = helpMenu->addAction("About");
+			connect(aboutAction, SIGNAL(triggered()), this, SLOT(On_About_Clicked()));
 		}
 
 		menuBar->addMenu(helpMenu);
@@ -468,6 +475,13 @@ void CMain_Window::Setup_GUI() {
 	emit Refresh_Disassembly();
 	emit Refresh_Registers();
 	emit Request_Update_Button_State();
+}
+
+void CMain_Window::On_About_Clicked() {
+	QMessageBox::about(this, "About", tr(	"<b>SArch32 emulator</b><br>Created by: Martin Ubl (<a href='mailto:martinubl@seznam.cz'>martinubl@seznam.cz</a>)<br><br>"
+											"Experimental ISA, assembler and emulator, created for educational purposes.<br><br>"
+											"Licensed under MIT license.<br><br>"
+											"<a href='https://github.com/MartinUbl/SArch32'>https://github.com/MartinUbl/SArch32</a>"));
 }
 
 void CDisplay_Widget::paintEvent(QPaintEvent* event)

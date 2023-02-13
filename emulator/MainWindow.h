@@ -114,6 +114,9 @@ class CMain_Window : public QMainWindow {
 		void On_Decimal_Fmt_Selected();
 		void On_Hexadecimal_Fmt_Selected();
 
+		// misc slots
+		void On_About_Clicked();
+
 	public:
 		CMain_Window(const std::string& memSObjFile);
 
