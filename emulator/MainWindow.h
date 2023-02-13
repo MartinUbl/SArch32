@@ -13,6 +13,10 @@
 #include <QtWidgets/QRadioButton>
 
 #include <array>
+#include <memory>
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 
 #include "../core/isa.h"
 #include "../core/machine.h"
@@ -37,6 +41,13 @@ class CDisplay_Widget : public QWidget
 		void paintEvent(QPaintEvent* event) override;
 };
 
+class CEvent_Proxy : public QObject {
+	Q_OBJECT
+
+	public:
+		//
+};
+
 /*
  * Emulator main window
  */
@@ -53,6 +64,12 @@ class CMain_Window : public QMainWindow {
 		QTextEdit* mDisassembly;
 		// 300x200 display
 		CDisplay_Widget* mDisplay_Widget;
+		// step button
+		QPushButton* mStep_Button;
+		// run button
+		QPushButton* mRun_Button;
+		// pause button
+		QPushButton* mPause_Button;
 
 		// machine-related attributes
 
@@ -72,20 +89,35 @@ class CMain_Window : public QMainWindow {
 
 		// should we print numbers in hex format?
 		bool mIs_Hexa = false;
+		// is the machine running freely?
+		bool mIs_Running = false;
+
+		// run thread for free running
+		std::unique_ptr<std::thread> mRun_Thread;
+
+	protected:
+		void Run_Thread_Fnc();
+		void Update_Button_State();
 
 	signals:
 		void Refresh_Registers();
 		void Refresh_Disassembly();
 		void Update_View_PC();
+		void Request_Update_Button_State();
+		void Request_Repaint();
 
 	protected slots:
 		// view related slots
 		void On_Refresh_Registers();
 		void On_Refresh_Disassembly();
 		void On_Update_View_PC();
+		void On_Update_Button_State();
+		void On_Request_Repaint();
 
 		// control related slots
 		void On_Step_Requested();
+		void On_Run_Requested();
+		void On_Pause_Requested();
 		void On_Decimal_Fmt_Selected();
 		void On_Hexadecimal_Fmt_Selected();
 

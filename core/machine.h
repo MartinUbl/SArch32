@@ -33,6 +33,8 @@ namespace sarch32 {
 
 			// video memory mapping
 			std::array<uint8_t, Video_Memory_End - Video_Memory_Start> mVideo_Memory;
+			// was there a write access to video memory?
+			bool mVideo_Mem_Changed = false;
 
 		public:
 			CMemory_Bus(const uint32_t memSize);
@@ -44,15 +46,28 @@ namespace sarch32 {
 			// clears video memory
 			void Clear_Video_Memory();
 
+			// was there a change to video memory?
+			bool Is_Video_Memory_Changed() const;
+			// clear video memory change flag
+			void Clear_Video_Memory_Changed_Flag();
+
 			// IBus iface
 			virtual void Read(uint32_t address, void* target, uint32_t size) const override;
 			virtual void Write(uint32_t address, const void* source, uint32_t size) override;
 	};
 
-	// exception thrown by CPU when unaligned access is detected
-	class unaligned_exception : public std::runtime_error {
+	class CInterrupt_Controller : public IInterrupt_Controller
+	{
+		private:
+			bool mIRQ_Pending = false;
+
 		public:
-			using std::runtime_error::runtime_error;
+			CInterrupt_Controller();
+
+			// IInterrupt_Controller iface
+			virtual void Signalize_IRQ() override;
+			virtual bool Has_Pending_IRQ() const override;
+			virtual void Clear_IRQ_Flag() override;
 	};
 
 	/*
@@ -64,6 +79,8 @@ namespace sarch32 {
 			CMemory_Bus mMem_Bus;
 			// CPU context instance
 			CCPU_Context mContext;
+			// interrupt controller
+			CInterrupt_Controller mInterrupt_Ctl;
 
 		public:
 			CMachine(uint32_t memory_size = Default_Memory_Size);
@@ -75,7 +92,7 @@ namespace sarch32 {
 			void Reset(bool warm = true);
 
 			// steps the CPU by given number of steps
-			void Step(size_t numberOfSteps = 1);
+			void Step(size_t numberOfSteps = 1, bool handleIRQs = false);
 
 			// retrieves CPU context (read only)
 			const CCPU_Context& Get_CPU_Context() const {
@@ -83,7 +100,7 @@ namespace sarch32 {
 			}
 
 			// retrieves memory bus (read only)
-			const CMemory_Bus& Get_Memory_Bus() const {
+			CMemory_Bus& Get_Memory_Bus() {
 				return mMem_Bus;
 			}
 	};

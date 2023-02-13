@@ -76,8 +76,85 @@ enum class NIVT_Entry
 	Reset,				// called upon warm reset
 	Abort,				// called upon memory abort event (e.g., unmapped memory access)
 	Undefined,			// called upon decoding an undefined instruction
+	Unaligned,			// called upon an unaligned access
 	IRQ,				// called upon external interrupt request
-	SupervisorCall,		// software interrupt - call the supervisor using an interrupt
+	Supervisor_Call,	// software interrupt - call the supervisor using an interrupt
+};
+
+// address of the interrupt vector table
+constexpr uint32_t IVT_Address = 0x00000000;
+
+// retrieve the address of an IVT entry
+inline constexpr uint32_t Get_IVT_Vector_Address(NIVT_Entry entry) {
+	return IVT_Address + (static_cast<uint32_t>(entry) * 4);
+}
+
+// the CPU triggered a reset
+class reset_exception : public std::runtime_error {
+	public:
+		using std::runtime_error::runtime_error;
+};
+
+// the CPU was signaled with an external interrupt request
+class irq_exception : public std::runtime_error {
+	public:
+		irq_exception() : std::runtime_error{ "Interrupt request was signalized" } {
+			//
+		}
+};
+
+// the CPU/bus triggered an abort exception (access to unmapped memory)
+class abort_exception : public std::runtime_error {
+	private:
+		uint32_t mAbort_Address;
+
+	public:
+		abort_exception(uint32_t address) : std::runtime_error{ std::string("Abort raised when attempting to access memory at ") + std::to_string(address) }, mAbort_Address(address) {
+			//
+		}
+
+		const uint32_t Get_Address() const {
+			return mAbort_Address;
+		}
+};
+
+// the CPU attempted to decode an invalid instruction
+class undefined_instruction_exception : public std::runtime_error {
+	public:
+		undefined_instruction_exception() : std::runtime_error{ "Undefined instruction at given PC" } {
+			//
+		}
+};
+
+// exception thrown by CPU when unaligned access is detected
+class unaligned_exception : public std::runtime_error {
+	public:
+		unaligned_exception() : std::runtime_error{ "Unaligned access to memory for instruction fetch" } {
+			//
+		}
+};
+
+// supervisor call instruction was decoded and executed
+class supervisor_call_exception : public std::runtime_error {
+	private:
+		int32_t mSvc_Num;
+
+	public:
+		supervisor_call_exception(int32_t svcNum) : std::runtime_error{ "Supervisor call (not an error)" }, mSvc_Num(svcNum) {
+			//
+		}
+
+		const int32_t Get_Svc_Number() const {
+			return mSvc_Num;
+		}
+};
+
+// exception thrown by CPU when an exception occurred during exception handling, e.g., when the CPU cannot read the IVT, ...
+class unrecoverable_exception : public std::runtime_error {
+	public:
+		unrecoverable_exception() : std::runtime_error{ "Unrecoverable error during exception handling (double fault)" } {
+			//
+		}
 };
 
 /*
@@ -178,6 +255,20 @@ class IBus
 		virtual void Read(uint32_t address, void* target, uint32_t size) const = 0;
 		// writes to a given address, places the bytes from source pointer to the memory
 		virtual void Write(uint32_t address, const void* source, uint32_t size) = 0;
+};
+
+/*
+ * Interrupt controller interface
+ */
+class IInterrupt_Controller
+{
+	public:
+		// signalizes IRQ
+		virtual void Signalize_IRQ() = 0;
+		// does the interrupt controller hold a pending IRQ?
+		virtual bool Has_Pending_IRQ() const = 0;
+		// clears the interrupt flag
+		virtual void Clear_IRQ_Flag() = 0;
 };
 
 /*

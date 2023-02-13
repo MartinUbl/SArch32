@@ -2,6 +2,7 @@
 
 #include "../core/sobjfile.h"
 
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QMessageBox>
 #include <QtGui/QTextBlock>
 #include <QtGui/QTextLayout>
@@ -202,6 +203,26 @@ void CMain_Window::On_Step_Requested() {
 	mDisplay_Widget->Trigger_Repaint(mMachine->Get_Memory_Bus());
 }
 
+void CMain_Window::On_Request_Repaint() {
+	mDisplay_Widget->Trigger_Repaint(mMachine->Get_Memory_Bus());
+}
+
+void CMain_Window::On_Run_Requested() {
+
+	if (mRun_Thread && mRun_Thread->joinable()) {
+		mIs_Running = false;
+		mRun_Thread->join();
+	}
+
+	mRun_Thread = std::make_unique<std::thread>(&CMain_Window::Run_Thread_Fnc, this);
+
+	mIs_Running = true;
+}
+
+void CMain_Window::On_Pause_Requested() {
+	mIs_Running = false;
+}
+
 void CMain_Window::On_Decimal_Fmt_Selected() {
 
 	mIs_Hexa = false;
@@ -216,6 +237,37 @@ void CMain_Window::On_Hexadecimal_Fmt_Selected() {
 
 	emit Refresh_Registers();
 	emit Refresh_Disassembly();
+}
+
+void CMain_Window::Run_Thread_Fnc() {
+
+	emit Request_Update_Button_State();
+
+	while (mIs_Running) {
+		mMachine->Step(1, true);
+
+		if (mMachine->Get_Memory_Bus().Is_Video_Memory_Changed()) {
+			emit Request_Repaint();
+			mMachine->Get_Memory_Bus().Clear_Video_Memory_Changed_Flag();
+		}
+
+		//std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
+
+	emit Request_Update_Button_State();
+	// refresh register content and PC
+	emit Refresh_Registers();
+	emit Update_View_PC();
+}
+
+void CMain_Window::Update_Button_State() {
+	mStep_Button->setEnabled(!mIs_Running);
+	mRun_Button->setEnabled(!mIs_Running);
+	mPause_Button->setEnabled(mIs_Running);
+}
+
+void CMain_Window::On_Update_Button_State() {
+	Update_Button_State();
 }
 
 void CMain_Window::Setup_GUI() {
@@ -238,9 +290,20 @@ void CMain_Window::Setup_GUI() {
 		{
 			ctlbox->setLayout(ctllay);
 
-			QPushButton* stepBtn = new QPushButton("Step", ctlbox);
-			connect(stepBtn, SIGNAL(clicked()), this, SLOT(On_Step_Requested()));
-			ctllay->addWidget(stepBtn);
+			mStep_Button = new QPushButton("Step", ctlbox);
+			mStep_Button->setEnabled(!mIs_Running);
+			connect(mStep_Button, SIGNAL(clicked()), this, SLOT(On_Step_Requested()));
+			ctllay->addWidget(mStep_Button);
+
+			mRun_Button = new QPushButton("Run", ctlbox);
+			mRun_Button->setEnabled(!mIs_Running);
+			connect(mRun_Button, SIGNAL(clicked()), this, SLOT(On_Run_Requested()));
+			ctllay->addWidget(mRun_Button);
+
+			mPause_Button = new QPushButton("Pause", ctlbox);
+			mPause_Button->setEnabled(mIs_Running);
+			connect(mPause_Button, SIGNAL(clicked()), this, SLOT(On_Pause_Requested()));
+			ctllay->addWidget(mPause_Button);
 
 			// TODO: more controls: Run, Pause, Step (5), Step (10), ...
 		}
@@ -328,18 +391,27 @@ void CMain_Window::Setup_GUI() {
 		 * Display view
 		 */
 
-		QGroupBox* mon = new QGroupBox("Display", central);
-		QVBoxLayout* monlay = new QVBoxLayout();
+		QGroupBox* rpanel = new QGroupBox("Peripherals", central);
+		QVBoxLayout* rlay = new QVBoxLayout(rpanel);
 		{
-			mon->setLayout(monlay);
+			rpanel->setLayout(rlay);
 
-			mDisplay_Widget = new CDisplay_Widget(mon);
-			mDisplay_Widget->setFixedWidth(300);
-			mDisplay_Widget->setFixedHeight(200);
-			monlay->addWidget(mDisplay_Widget, Qt::AlignHCenter);
+			QGroupBox* mon = new QGroupBox("Display", rpanel);
+			QHBoxLayout* monlay = new QHBoxLayout();
+			{
+				mon->setLayout(monlay);
+
+				mDisplay_Widget = new CDisplay_Widget(mon);
+				mDisplay_Widget->setFixedWidth(300);
+				mDisplay_Widget->setFixedHeight(200);
+				monlay->addWidget(mDisplay_Widget, Qt::AlignHCenter);
+			}
+
+			rlay->addWidget(mon);
+			rlay->addStretch(1);
 		}
 
-		clay->addWidget(mon, 1, 2);
+		clay->addWidget(rpanel, 1, 2);
 		clay->setColumnStretch(2, 2);
 	}
 
@@ -349,10 +421,13 @@ void CMain_Window::Setup_GUI() {
 	connect(this, SIGNAL(Refresh_Registers()), this, SLOT(On_Refresh_Registers()));
 	connect(this, SIGNAL(Refresh_Disassembly()), this, SLOT(On_Refresh_Disassembly()));
 	connect(this, SIGNAL(Update_View_PC()), this, SLOT(On_Update_View_PC()));
+	connect(this, SIGNAL(Request_Update_Button_State()), this, SLOT(On_Update_Button_State()));
+	connect(this, SIGNAL(Request_Repaint()), this, SLOT(On_Request_Repaint()));
 
 	// immediatell refresh disassembly and register contents
 	emit Refresh_Disassembly();
 	emit Refresh_Registers();
+	emit Request_Update_Button_State();
 }
 
 void CDisplay_Widget::paintEvent(QPaintEvent* event)

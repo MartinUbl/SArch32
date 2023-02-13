@@ -27,8 +27,7 @@ namespace sarch32 {
 		}
 
 		if (address + size > mMain_Memory.size()) {
-			// TODO: raise abort
-			return;
+			throw abort_exception{ address };
 		}
 
 		std::copy_n(mMain_Memory.begin() + address, size, reinterpret_cast<uint8_t*>(target));
@@ -41,12 +40,12 @@ namespace sarch32 {
 		// video memory connected to bus
 		if (address >= Video_Memory_Start && address + size < Video_Memory_End) {
 			std::copy_n(reinterpret_cast<const uint8_t*>(source), size, mVideo_Memory.begin() + (address - Video_Memory_Start));
+			mVideo_Mem_Changed = true;
 			return;
 		}
 
 		if (address + size > mMain_Memory.size()) {
-			// TODO: raise abort
-			return;
+			throw abort_exception{ address };
 		}
 
 		std::copy_n(reinterpret_cast<const uint8_t*>(source), size, mMain_Memory.begin() + address);
@@ -84,9 +83,33 @@ namespace sarch32 {
 		std::fill(mVideo_Memory.begin(), mVideo_Memory.end(), 0);
 	}
 
+	bool CMemory_Bus::Is_Video_Memory_Changed() const {
+		return mVideo_Mem_Changed;
+	}
+
+	void CMemory_Bus::Clear_Video_Memory_Changed_Flag() {
+		mVideo_Mem_Changed = false;
+	}
+
 	/***********************************************************************************
-	 * Exceptions
+	 * Interrupt controller
 	 ***********************************************************************************/
+
+	CInterrupt_Controller::CInterrupt_Controller() {
+		//
+	}
+
+	void CInterrupt_Controller::Signalize_IRQ() {
+		mIRQ_Pending = true;
+	}
+
+	bool CInterrupt_Controller::Has_Pending_IRQ() const {
+		return mIRQ_Pending;
+	}
+
+	void CInterrupt_Controller::Clear_IRQ_Flag() {
+		mIRQ_Pending = false;
+	}
 
 	/***********************************************************************************
 	 * Machine
@@ -122,6 +145,8 @@ namespace sarch32 {
 		mContext.Reg(NRegister::PC) = Reset_Vector;		// reset PC to a reset vector
 		mContext.Reg(NRegister::FLG) = 0;				// reset flags
 
+		mInterrupt_Ctl.Clear_IRQ_Flag();
+
 		// cold reset erases memory (or at least generates a garbagge or zeroes)
 		if (!warm) {
 			mMem_Bus.Clear_Main_Memory();
@@ -131,38 +156,96 @@ namespace sarch32 {
 		mMem_Bus.Clear_Video_Memory();
 	}
 
-	void CMachine::Step(size_t numberOfSteps) {
+	void CMachine::Step(size_t numberOfSteps, bool handleIRQs) {
 
 		for (size_t i = 0; i < numberOfSteps; i++) {
 
-			uint32_t encoded;
-
-			if ((mContext.Reg(NRegister::PC) & 0b11) != 0) {
-				throw unaligned_exception("The program counter is not aligned to 4 bytes");
-			}
-
-			// 1) fetch
 			try {
-				encoded = mContext.Mem_Read_Scalar<uint32_t>(mContext.Reg(NRegister::PC));
-				mContext.Reg(NRegister::PC) += 4;
-			}
-			catch (std::exception& /*ex*/) {
-				// TODO: handle fetch aborts - jump to IVT[...] and handle
-				return;
-			}
 
-			// 2) decode
-			auto instr = CInstruction::Build_From_Binary(encoded);
-			if (instr) {
-				//std::cout << "EXEC: " << instr->Generate_String() << std::endl;
-
-				// 3) execute + writeback
-				if (!instr->Execute(mContext)) {
-					std::cerr << "Could not execute instruction: " << instr->Generate_String() << std::endl;
+				// has pending IRQ? signalize
+				if (handleIRQs && mInterrupt_Ctl.Has_Pending_IRQ()) {
+					throw irq_exception();
 				}
+
+				uint32_t encoded;
+
+				if ((mContext.Reg(NRegister::PC) & 0b11) != 0) {
+					throw unaligned_exception();
+				}
+
+				// 1) fetch
+				try {
+					encoded = mContext.Mem_Read_Scalar<uint32_t>(mContext.Reg(NRegister::PC));
+					mContext.Reg(NRegister::PC) += 4;
+				}
+				catch (std::exception& /*ex*/) {
+					// TODO: handle fetch aborts - jump to IVT[...] and handle
+					return;
+				}
+
+				// 2) decode
+				auto instr = CInstruction::Build_From_Binary(encoded);
+				if (instr) {
+					//std::cout << "EXEC: " << instr->Generate_String() << std::endl;
+
+					// 3) execute + writeback
+					// NOTE: instruction execute may throw an exception - one of those listed below
+					if (!instr->Execute(mContext)) {
+						std::cerr << "Could not execute instruction: " << instr->Generate_String() << std::endl;
+					}
+				}
+				else {
+					throw undefined_instruction_exception();
+				}
+
 			}
-			else {
-				// TODO: raise unknown instruction interrupt
+			catch (reset_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::Reset), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
+			}
+			catch (undefined_instruction_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::Undefined), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
+			}
+			catch (abort_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::Abort), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
+			}
+			catch (unaligned_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::Unaligned), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
+			}
+			catch (irq_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::IRQ), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
+			}
+			catch (supervisor_call_exception& /*ex*/) {
+				mContext.Reg(NRegister::RA) = mContext.Reg(NRegister::PC);
+
+				// load interrupt vector from memory
+				uint32_t addr = 0;
+				mMem_Bus.Read(Get_IVT_Vector_Address(NIVT_Entry::Supervisor_Call), &addr, sizeof(uint32_t));
+				mContext.Reg(NRegister::PC) = addr;
 			}
 		}
 
