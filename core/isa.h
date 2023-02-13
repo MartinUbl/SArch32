@@ -245,6 +245,8 @@ class sarch32_generator_exception : public std::exception {
 		}
 };
 
+class IPeripheral;
+
 /*
  * Memory bus interface
  */
@@ -255,7 +257,14 @@ class IBus
 		virtual void Read(uint32_t address, void* target, uint32_t size) const = 0;
 		// writes to a given address, places the bytes from source pointer to the memory
 		virtual void Write(uint32_t address, const void* source, uint32_t size) = 0;
+
+		// maps peripheral on a bus
+		virtual bool Map_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) = 0;
+		// unmaps peripheral from a bus
+		virtual bool Unmap_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) = 0;
 };
+
+constexpr int16_t IRQ_Channel_Any = -1;
 
 /*
  * Interrupt controller interface
@@ -264,11 +273,28 @@ class IInterrupt_Controller
 {
 	public:
 		// signalizes IRQ
-		virtual void Signalize_IRQ() = 0;
+		virtual void Signalize_IRQ(int16_t channel) = 0;
 		// does the interrupt controller hold a pending IRQ?
-		virtual bool Has_Pending_IRQ() const = 0;
+		virtual bool Has_Pending_IRQ(int16_t channel = IRQ_Channel_Any) const = 0;
 		// clears the interrupt flag
-		virtual void Clear_IRQ_Flag() = 0;
+		virtual void Clear_IRQ_Flag(int16_t channel) = 0;
+};
+
+/*
+ * Peripheral device interface
+ */
+class IPeripheral
+{
+	public:
+		// attachs peripheral to the bus and interrupt controller
+		virtual void Attach(IBus& bus, IInterrupt_Controller& interruptCtl) = 0;
+		// detachs peripheral from the bus and interrupt controller
+		virtual void Detach(IBus& bus, IInterrupt_Controller& interruptCtl) = 0;
+
+		// reads from given address of peripheral memory, stores the read bytes of given amount into target pointer
+		virtual void Read_Memory(uint32_t address, void* target, uint32_t size) const = 0;
+		// writes to a given address of peripheral memory, places the bytes from source pointer to the memory
+		virtual void Write_Memory(uint32_t address, const void* source, uint32_t size) = 0;
 };
 
 /*

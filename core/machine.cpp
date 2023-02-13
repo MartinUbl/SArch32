@@ -18,7 +18,7 @@ namespace sarch32 {
 
 	void CMemory_Bus::Read(uint32_t address, void* target, uint32_t size) const {
 
-		// TODO: this should be modular
+		// TODO: this should be more modular
 
 		// video memory connected to bus
 		if (address >= Video_Memory_Start && address + size <= Video_Memory_End) {
@@ -26,6 +26,14 @@ namespace sarch32 {
 			return;
 		}
 
+		// peripheral memory
+		for (auto mapping : mPeripheral_Memory) {
+			if (address >= mapping.addressStart && address < mapping.addressStart + mapping.length) {
+				return mapping.peripheral->Read_Memory(address, target, size);
+			}
+		}
+
+		// detect invalid memory access
 		if (address + size > mMain_Memory.size()) {
 			throw abort_exception{ address };
 		}
@@ -35,7 +43,7 @@ namespace sarch32 {
 
 	void CMemory_Bus::Write(uint32_t address, const void* source, uint32_t size) {
 
-		// TODO: this should be modular
+		// TODO: this should be more modular
 
 		// video memory connected to bus
 		if (address >= Video_Memory_Start && address + size < Video_Memory_End) {
@@ -44,11 +52,54 @@ namespace sarch32 {
 			return;
 		}
 
+		// peripheral memory
+		for (auto mapping : mPeripheral_Memory) {
+			if (address >= mapping.addressStart && address < mapping.addressStart + mapping.length) {
+				return mapping.peripheral->Write_Memory(address, source, size);
+			}
+		}
+
+		// detect invalid memory access
 		if (address + size > mMain_Memory.size()) {
 			throw abort_exception{ address };
 		}
 
 		std::copy_n(reinterpret_cast<const uint8_t*>(source), size, mMain_Memory.begin() + address);
+	}
+
+	bool CMemory_Bus::Map_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) {
+
+		// detect overlaps
+		for (auto mapping : mPeripheral_Memory) {
+			if (address >= mapping.addressStart && address < mapping.addressStart + mapping.length) {
+				return false;
+			}
+			if (address + length >= mapping.addressStart && address + length < mapping.addressStart + mapping.length) {
+				return false;
+			}
+		}
+
+		mPeripheral_Memory.push_back({
+			peripheral,
+			address,
+			length
+		});
+
+		return true;
+	}
+
+	bool CMemory_Bus::Unmap_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) {
+
+		for (auto itr = mPeripheral_Memory.begin(); itr != mPeripheral_Memory.end(); ) {
+			if (itr->addressStart == address && itr->length == length) {
+				itr = mPeripheral_Memory.erase(itr);
+			}
+			else {
+				++itr;
+			}
+		}
+
+		return true;
 	}
 
 	bool CMemory_Bus::Load_Bytes_To(const std::vector<uint8_t>& bytes, uint32_t address) {
@@ -99,15 +150,15 @@ namespace sarch32 {
 		//
 	}
 
-	void CInterrupt_Controller::Signalize_IRQ() {
+	void CInterrupt_Controller::Signalize_IRQ(int16_t channel) {
 		mIRQ_Pending = true;
 	}
 
-	bool CInterrupt_Controller::Has_Pending_IRQ() const {
+	bool CInterrupt_Controller::Has_Pending_IRQ(int16_t channel) const {
 		return mIRQ_Pending;
 	}
 
-	void CInterrupt_Controller::Clear_IRQ_Flag() {
+	void CInterrupt_Controller::Clear_IRQ_Flag(int16_t channel) {
 		mIRQ_Pending = false;
 	}
 
@@ -145,7 +196,7 @@ namespace sarch32 {
 		mContext.Reg(NRegister::PC) = Reset_Vector;		// reset PC to a reset vector
 		mContext.Reg(NRegister::FLG) = 0;				// reset flags
 
-		mInterrupt_Ctl.Clear_IRQ_Flag();
+		mInterrupt_Ctl.Clear_IRQ_Flag(IRQ_Channel_Any);
 
 		// cold reset erases memory (or at least generates a garbagge or zeroes)
 		if (!warm) {
@@ -163,7 +214,7 @@ namespace sarch32 {
 			try {
 
 				// has pending IRQ? signalize
-				if (handleIRQs && mInterrupt_Ctl.Has_Pending_IRQ()) {
+				if (handleIRQs && mInterrupt_Ctl.Has_Pending_IRQ(IRQ_Channel_Any)) {
 					throw irq_exception();
 				}
 
@@ -178,9 +229,13 @@ namespace sarch32 {
 					encoded = mContext.Mem_Read_Scalar<uint32_t>(mContext.Reg(NRegister::PC));
 					mContext.Reg(NRegister::PC) += 4;
 				}
-				catch (std::exception& /*ex*/) {
-					// TODO: handle fetch aborts - jump to IVT[...] and handle
-					return;
+				catch (abort_exception& /*ex*/) {
+					// just rethrow the exception to outer scope
+					throw;
+				}
+				catch (std::exception& ex) {
+					std::cerr << "Unhandled machine unrelated exception: " << ex.what() << std::endl;
+					continue;
 				}
 
 				// 2) decode

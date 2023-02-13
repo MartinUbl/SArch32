@@ -36,6 +36,16 @@ namespace sarch32 {
 			// was there a write access to video memory?
 			bool mVideo_Mem_Changed = false;
 
+			// structure for peripheral memory mapping
+			struct TPeripheral_Mapping {
+				std::shared_ptr<IPeripheral> peripheral;
+				uint32_t addressStart;
+				uint32_t length;
+			};
+
+			// a vector of peripheral memory mapping
+			std::vector<TPeripheral_Mapping> mPeripheral_Memory;
+
 		public:
 			CMemory_Bus(const uint32_t memSize);
 
@@ -54,8 +64,16 @@ namespace sarch32 {
 			// IBus iface
 			virtual void Read(uint32_t address, void* target, uint32_t size) const override;
 			virtual void Write(uint32_t address, const void* source, uint32_t size) override;
+			virtual bool Map_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) override;
+			virtual bool Unmap_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) override;
 	};
 
+	/*
+	 * Used interrupt controller
+	 * 
+	 * This model includes just a single flag for holding IRQ indication
+	 * Future models may include IRQ queuing, precedence, channels, etc.
+	 */
 	class CInterrupt_Controller : public IInterrupt_Controller
 	{
 		private:
@@ -65,9 +83,9 @@ namespace sarch32 {
 			CInterrupt_Controller();
 
 			// IInterrupt_Controller iface
-			virtual void Signalize_IRQ() override;
-			virtual bool Has_Pending_IRQ() const override;
-			virtual void Clear_IRQ_Flag() override;
+			virtual void Signalize_IRQ(int16_t channel) override;
+			virtual bool Has_Pending_IRQ(int16_t channel) const override;
+			virtual void Clear_IRQ_Flag(int16_t channel) override;
 	};
 
 	/*
@@ -102,6 +120,11 @@ namespace sarch32 {
 			// retrieves memory bus (read only)
 			CMemory_Bus& Get_Memory_Bus() {
 				return mMem_Bus;
+			}
+
+			// retrieves an interrupt controller
+			CInterrupt_Controller& Get_Interrupt_Controller() {
+				return mInterrupt_Ctl;
 			}
 	};
 

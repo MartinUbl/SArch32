@@ -1032,10 +1032,7 @@ class CInstruction_Svc : public CInstruction_1Param<NOperand_Type::Immediate> {
 			if (!Check_Condition(mCondition, cpu))
 				return true;
 
-			cpu.Reg(NRegister::RA) = cpu.Reg(NRegister::PC) + 4;
-			// TODO: move PC to IVT[#imm]
-
-			return true;
+			throw supervisor_call_exception{ mSrc.Get_Immediate() };
 		}
 };
 
