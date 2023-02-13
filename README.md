@@ -14,7 +14,6 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Assembler|✅||
 |Memory bus|✅||
 |Emulator core|✅||
-|300x200 emulated display|✅|video memory mapped to bus|
 |Peripheral mappings|✅||
 |Extended debugger|⏳|Run+pause|
 |Debugger support for instruction decoder|❌||
@@ -26,6 +25,24 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Interrupts|⏳||
 |CPU modes|❌|System and user mode|
 |Paging|❌||
+|FPU coprocessor|❌||
+
+Legend: ✅ - full support, ⏳ - partial support, ❌ - not yet implemented
+
+### Supported peripherals
+
+|Feature|Support|Note|
+|---|---|---|
+|300x200 emulated monochromatic display|✅|video memory mapped to bus|
+|GPIO controller|❌||
+|Timer|❌||
+|UART|❌||
+|DMA|❌||
+|PCM/Audio controller|❌||
+|PWM|❌||
+|SPI|❌||
+|I2C|❌||
+|VirtIO|❌||
 
 Legend: ✅ - full support, ⏳ - partial support, ❌ - not yet implemented
 
