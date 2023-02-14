@@ -361,14 +361,13 @@ class CCPU_Context
 		}
 
 		// retrieve a reference to state register
-		template<typename T = uint32_t>
-		T& State(NProcessor_State_Register regist) {
-			return static_cast<T>(mState_Registers[static_cast<size_t>(regist)]);
+		uint32_t& State(NProcessor_State_Register regist) {
+			return mState_Registers[static_cast<size_t>(regist)];
 		}
 
-		// retrieve a reference to state register, constant context
+		// retrieve a state register cast to given type, constant context
 		template<typename T = uint32_t>
-		const T& State(NProcessor_State_Register regist) const {
+		const T State(NProcessor_State_Register regist) const {
 			return static_cast<T>(mState_Registers[static_cast<size_t>(regist)]);
 		}
 

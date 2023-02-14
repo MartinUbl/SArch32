@@ -22,6 +22,8 @@
 #include "../core/machine.h"
 #include "../core/peripherals/display.h"
 
+#include "config.h"
+
 /*
  * Display widget (300x200 "display" of the machine)
  */
@@ -121,8 +123,10 @@ class CMain_Window : public QMainWindow {
 		void On_About_Clicked();
 
 	public:
-		CMain_Window(const std::string& memSObjFile);
+		CMain_Window();
 
+		// creates and configures machine
+		bool Setup_Machine(const CConfig& config);
 		// sets up the GUI for work
 		void Setup_GUI();
 };

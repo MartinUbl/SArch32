@@ -12,20 +12,49 @@
 
 #include <iostream>
 
-CMain_Window::CMain_Window(const std::string& memSObjFile)
-	: QMainWindow(), mObject_File(memSObjFile) {
+CMain_Window::CMain_Window()
+	: QMainWindow() {
+	//
+}
+
+bool CMain_Window::Setup_Machine(const CConfig& config) {
+
+	mObject_File = config.Get_Memory_Image();
 
 	// create machine
-	// TODO: load config - pass the type of machine and memory size
-	mMachine = std::make_unique<sarch32::CMachine>();
+	if (config.Get_Machine_Name() == "default" || config.Get_Machine_Name() == "sarch32_001") {
+		mMachine = std::make_unique<sarch32::CMachine>(config.Get_Memory_Size());
+	}
+	else {
+		QMessageBox::critical(nullptr, "Error", tr("Unknown machine type: {}").arg(QString::fromStdString(config.Get_Machine_Name())));
+		return false;
+	}
+
 	mMachine->Reset(false);
 
 	// init memory from given file
-	if (!mMachine->Init_Memory_From_File(memSObjFile)) {
+	if (!mMachine->Init_Memory_From_File(config.Get_Memory_Image())) {
 		QMessageBox::critical(nullptr, "Error", "Could not load memory object file");
 	}
 
-	mDisplay = mMachine->Attach_Peripheral<sarch32::CDisplay_300x200>();
+	for (const auto& peripherals = config.Get_Peripherals(); auto &p : peripherals) {
+
+		if (p.first == "display") {
+			if (p.second == "default" || p.second == "d1_monochromatic") {
+				mDisplay = mMachine->Attach_Peripheral<sarch32::CDisplay_300x200>();
+			}
+			else {
+				QMessageBox::critical(nullptr, "Error", tr("Unknown display: {}").arg(QString::fromStdString(p.second)));
+				return false;
+			}
+		}
+		else {
+			QMessageBox::critical(nullptr, "Error", tr("Unknown peripheral: {}").arg(QString::fromStdString(p.first)));
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void CMain_Window::On_Refresh_Registers() {

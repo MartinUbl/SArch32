@@ -1,0 +1,4 @@
+machine = sarch32_001
+memory = 2M
+display = d1_monochromatic
+image = kernel.bin
