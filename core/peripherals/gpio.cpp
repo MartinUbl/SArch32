@@ -43,11 +43,25 @@ namespace sarch32 {
 			const size_t registerIdx = static_cast<size_t>(offset / 4);
 
 			// attempt to read write-only registers
-			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Set_0) && registerIdx >= static_cast<size_t>(NGPIO_Registers::Clear_1)) {
+			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Set_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Clear_1)) {
 				return;
 			}
 
-			*reinterpret_cast<uint32_t*>(target) = mGPIO_Memory[registerIdx];
+			// level registers are special - the do not have physical memory assigned, but rather represents a set of pin states
+			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Level_1)) {
+				const uint32_t pinBank = (registerIdx - static_cast<size_t>(NGPIO_Registers::Level_0)) * 32;
+
+				uint32_t val = 0;
+				for (uint32_t i = 0; i < 32; i++) {
+					val <<= 1;
+					val |= mGPIO_States[pinBank + i];
+				}
+
+				*reinterpret_cast<uint32_t*>(target) = val;
+			}
+			else {
+				*reinterpret_cast<uint32_t*>(target) = mGPIO_Memory[registerIdx];
+			}
 		}
 
 	}
@@ -63,12 +77,45 @@ namespace sarch32 {
 			const uint32_t offset = (address - GPIO_Memory_Start);
 			const size_t registerIdx = static_cast<size_t>(offset / 4);
 
+			const uint32_t setvalue = *reinterpret_cast<const uint32_t*>(source);
+
 			// attempt to write to read-only registers
-			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_1)) {
+			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Level_1)) {
 				return;
 			}
 
-			mGPIO_Memory[registerIdx] = *reinterpret_cast<const uint32_t*>(source);
+			bool isClear = true;
+
+			// set and clear registers are special - they are "routed" to pin state
+			switch (static_cast<NGPIO_Registers>(registerIdx)) {
+				case NGPIO_Registers::Set_0:
+					isClear = false;
+					[[fallthrough]]
+				case NGPIO_Registers::Clear_0:
+				{
+					for (uint32_t i = 0; i < 32; i++) {
+						if (setvalue & (1ULL << i)) {
+							Set_State(i, isClear);
+						}
+					}
+					break;
+				}
+				case NGPIO_Registers::Set_1:
+					isClear = false;
+					[[fallthrough]]
+				case NGPIO_Registers::Clear_1:
+				{
+					for (uint32_t i = 0; i < 32; i++) {
+						if (setvalue & (1ULL << i)) {
+							Set_State(32 + i, isClear);
+						}
+					}
+					break;
+				}
+				default:
+					mGPIO_Memory[registerIdx] = setvalue;
+					break;
+			}
 
 			mGPIO_Mem_Changed = true;
 		}
@@ -77,7 +124,11 @@ namespace sarch32 {
 
 	void CGPIO_Controller::Set_State(uint32_t pin, bool state) {
 
+		// output pin - just set state
 		if (Get_Pin_Mode(pin) == NGPIO_Mode::Output) {
+			mGPIO_States[pin] = state;
+		}
+		else if (Get_Pin_Mode(pin) == NGPIO_Mode::Input) {
 
 			bool change = (mGPIO_States[pin] != state);
 
@@ -85,14 +136,14 @@ namespace sarch32 {
 
 			if (change) {
 				if (state && Get_Reg_State(NGPIO_Registers::_Rising, pin)) {
-					Set_Reg_State(NGPIO_Registers::_Rising, pin, true);
+					Set_Reg_State(NGPIO_Registers::_Detect, pin, true);
 
 					if (auto intctl = mInterrupt_Ctl.lock()) {
 						intctl->Signalize_IRQ(GPIO_IRQ_Number);
 					}
 				}
 				else if (!state && Get_Reg_State(NGPIO_Registers::_Falling, pin)) {
-					Set_Reg_State(NGPIO_Registers::_Falling, pin, true);
+					Set_Reg_State(NGPIO_Registers::_Detect, pin, true);
 
 					if (auto intctl = mInterrupt_Ctl.lock()) {
 						intctl->Signalize_IRQ(GPIO_IRQ_Number);
