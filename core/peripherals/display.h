@@ -36,8 +36,8 @@ namespace sarch32 {
 			void Clear_Video_Memory_Changed_Flag();
 
 			// IPeripheral iface
-			virtual void Attach(IBus& bus, IInterrupt_Controller& interruptCtl) override;
-			virtual void Detach(IBus& bus, IInterrupt_Controller& interruptCtl) override;
+			virtual void Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) override;
+			virtual void Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) override;
 			virtual void Read_Memory(uint32_t address, void* target, uint32_t size) const override;
 			virtual void Write_Memory(uint32_t address, const void* source, uint32_t size) override;
 	};

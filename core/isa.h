@@ -321,9 +321,9 @@ class IPeripheral
 {
 	public:
 		// attachs peripheral to the bus and interrupt controller
-		virtual void Attach(IBus& bus, IInterrupt_Controller& interruptCtl) = 0;
+		virtual void Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) = 0;
 		// detachs peripheral from the bus and interrupt controller
-		virtual void Detach(IBus& bus, IInterrupt_Controller& interruptCtl) = 0;
+		virtual void Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) = 0;
 
 		// reads from given address of peripheral memory, stores the read bytes of given amount into target pointer
 		virtual void Read_Memory(uint32_t address, void* target, uint32_t size) const = 0;

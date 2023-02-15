@@ -136,7 +136,7 @@ namespace sarch32 {
 	 * Machine
 	 ***********************************************************************************/
 
-	CMachine::CMachine(uint32_t memory_size) : mMem_Bus(memory_size), mContext(mMem_Bus) {
+	CMachine::CMachine(uint32_t memory_size) : mMem_Bus(memory_size), mContext(mMem_Bus), mInterrupt_Ctl{ std::make_shared<CInterrupt_Controller>() } {
 		//
 	}
 
@@ -168,7 +168,7 @@ namespace sarch32 {
 
 		mContext.State(NProcessor_State_Register::Mode) = static_cast<uint32_t>(NCPU_Mode::System);	// starts in system mode
 
-		mInterrupt_Ctl.Clear_IRQ_Flag(IRQ_Channel_Any);
+		mInterrupt_Ctl->Clear_IRQ_Flag(IRQ_Channel_Any);
 
 		// cold reset erases memory (or at least generates a garbagge or zeroes)
 		if (!warm) {
@@ -183,7 +183,7 @@ namespace sarch32 {
 			try {
 
 				// has pending IRQ? signalize
-				if (handleIRQs && mInterrupt_Ctl.Has_Pending_IRQ(IRQ_Channel_Any)) {
+				if (handleIRQs && mInterrupt_Ctl->Has_Pending_IRQ(IRQ_Channel_Any)) {
 					throw irq_exception();
 				}
 

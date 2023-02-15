@@ -15,14 +15,14 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Memory bus|✅||
 |Emulator core|✅||
 |Peripheral mappings|✅||
-|Extended debugger|⏳|Run+pause|
+|Extended debugger|⏳|Supports stepping, run/pause|
 |Debugger support for instruction decoder|❌||
 |Memory dump|❌||
 |Modular emulator|❌|support for module connection|
 |Configuration|✅||
 |ISA documentation|❌||
-|CPU exceptions|⏳|No standard flow established|
-|Interrupts|⏳||
+|CPU exceptions|✅||
+|Interrupts|⏳|Base support, untested|
 |CPU modes|❌|System and user mode|
 |Paging|❌||
 |FPU coprocessor|❌||
@@ -34,7 +34,7 @@ Legend: ✅ - full support, ⏳ - partial support, ❌ - not yet implemented
 |Feature|Support|Note|
 |---|---|---|
 |300x200 emulated monochromatic display|✅|video memory mapped to bus|
-|GPIO controller|❌||
+|GPIO controller|✅||
 |Timer|❌||
 |UART|❌||
 |DMA|❌||

@@ -8,8 +8,6 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QTextEdit>
 #include <QtWidgets/QWidget>
-#include <QtGui/QPainter>
-#include <QtGui/QPaintEvent>
 #include <QtWidgets/QRadioButton>
 
 #include <array>
@@ -21,28 +19,11 @@
 #include "../core/isa.h"
 #include "../core/machine.h"
 #include "../core/peripherals/display.h"
+#include "../core/peripherals/gpio.h"
 
 #include "config.h"
-
-/*
- * Display widget (300x200 "display" of the machine)
- */
-class CDisplay_Widget : public QWidget
-{
-	private:
-		// copy of a display buffer
-		std::vector<uint8_t> mDisplay_Buffer;
-
-	public:
-		explicit CDisplay_Widget(QWidget* parent = nullptr) : QWidget(parent) {
-			//
-		}
-
-		// triggers repainting, considering the memory obtained through the bus
-		void Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus);
-
-		void paintEvent(QPaintEvent* event) override;
-};
+#include "peripherals/display_widget.h"
+#include "peripherals/gpio_widget.h"
 
 /*
  * Emulator main window
@@ -60,6 +41,8 @@ class CMain_Window : public QMainWindow {
 		QTextEdit* mDisassembly;
 		// 300x200 display
 		CDisplay_Widget* mDisplay_Widget;
+		// 300x200 display
+		CGPIO_Widget* mGPIO_Widget;
 		// step button
 		QPushButton* mStep_Button;
 		// run button
@@ -75,6 +58,8 @@ class CMain_Window : public QMainWindow {
 		std::string mObject_File;
 		// display peripheral
 		std::shared_ptr<sarch32::CDisplay_300x200> mDisplay;
+		// GPIO controller peripheral
+		std::shared_ptr<sarch32::CGPIO_Controller> mGPIO_Ctl;
 
 		// structure helper for finding the location of PC
 		struct TSection_Break {

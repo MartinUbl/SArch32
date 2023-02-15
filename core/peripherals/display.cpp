@@ -20,11 +20,11 @@ namespace sarch32 {
 		mVideo_Mem_Changed = false;
 	}
 
-	void CDisplay_300x200::Attach(IBus& bus, IInterrupt_Controller& interruptCtl) {
+	void CDisplay_300x200::Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) {
 		bus.Map_Peripheral(shared_from_this(), Video_Memory_Start, Video_Memory_End - Video_Memory_Start);
 	}
 
-	void CDisplay_300x200::Detach(IBus& bus, IInterrupt_Controller& interruptCtl) {
+	void CDisplay_300x200::Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) {
 		bus.Unmap_Peripheral(shared_from_this(), Video_Memory_Start, Video_Memory_End - Video_Memory_Start);
 	}
 

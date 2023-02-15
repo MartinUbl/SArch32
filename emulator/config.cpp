@@ -72,7 +72,7 @@ bool CConfig::Load_From_File(const std::string& path, std::string& error) {
 
 			}
 			// TODO: modularize peripherals better
-			else if (key == "display") {
+			else if (key == "display" || key == "gpio") {
 				mPeripherals[key] = value;
 			}
 			else if (key == "image") {

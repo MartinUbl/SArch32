@@ -48,6 +48,15 @@ bool CMain_Window::Setup_Machine(const CConfig& config) {
 				return false;
 			}
 		}
+		else if (p.first == "gpio") {
+			if (p.second == "default" || p.second == "gpio64p") {
+				mGPIO_Ctl = mMachine->Attach_Peripheral<sarch32::CGPIO_Controller>();
+			}
+			else {
+				QMessageBox::critical(nullptr, "Error", tr("Unknown GPIO controller: {}").arg(QString::fromStdString(p.second)));
+				return false;
+			}
+		}
 		else {
 			QMessageBox::critical(nullptr, "Error", tr("Unknown peripheral: {}").arg(QString::fromStdString(p.first)));
 			return false;
@@ -232,13 +241,17 @@ void CMain_Window::On_Step_Requested() {
 	emit Update_View_PC();
 
 	// request repaint
-	mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	if (mDisplay) {
+		mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	}
 
 	statusBar()->showMessage(tr("Step complete"));
 }
 
 void CMain_Window::On_Request_Repaint() {
-	mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	if (mDisplay) {
+		mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	}
 }
 
 void CMain_Window::On_Run_Requested() {
@@ -288,7 +301,7 @@ void CMain_Window::Run_Thread_Fnc() {
 
 		mMachine->Step(1, true);
 
-		if (mDisplay->Is_Video_Memory_Changed()) {
+		if (mDisplay && mDisplay->Is_Video_Memory_Changed()) {
 			emit Request_Repaint();
 		}
 
@@ -462,7 +475,7 @@ void CMain_Window::Setup_GUI() {
 		clay->setColumnStretch(1, 5);
 
 		/*
-		 * Display view
+		 * Peripherals view
 		 */
 
 		QGroupBox* rpanel = new QGroupBox("Peripherals", central);
@@ -470,18 +483,35 @@ void CMain_Window::Setup_GUI() {
 		{
 			rpanel->setLayout(rlay);
 
-			QGroupBox* mon = new QGroupBox("Display", rpanel);
-			QHBoxLayout* monlay = new QHBoxLayout();
-			{
-				mon->setLayout(monlay);
+			if (mDisplay) {
+				QGroupBox* mon = new QGroupBox("Display", rpanel);
+				QHBoxLayout* monlay = new QHBoxLayout();
+				{
+					mon->setLayout(monlay);
 
-				mDisplay_Widget = new CDisplay_Widget(mon);
-				mDisplay_Widget->setFixedWidth(300);
-				mDisplay_Widget->setFixedHeight(200);
-				monlay->addWidget(mDisplay_Widget, Qt::AlignHCenter);
+					mDisplay_Widget = new CDisplay_Widget(mon);
+					mDisplay_Widget->setFixedWidth(300);
+					mDisplay_Widget->setFixedHeight(200);
+					monlay->addWidget(mDisplay_Widget, Qt::AlignHCenter);
+				}
+
+				rlay->addWidget(mon);
 			}
 
-			rlay->addWidget(mon);
+			if (mGPIO_Ctl) {
+				QGroupBox* gpio = new QGroupBox("GPIO", rpanel);
+				QHBoxLayout* gpiolay = new QHBoxLayout();
+				{
+					gpio->setLayout(gpiolay);
+
+					mGPIO_Widget = new CGPIO_Widget(mGPIO_Ctl, gpio);
+					mGPIO_Widget->Setup_GUI();
+					gpiolay->addWidget(mGPIO_Widget, Qt::AlignHCenter);
+				}
+
+				rlay->addWidget(gpio);
+			}
+
 			rlay->addStretch(1);
 		}
 
@@ -512,62 +542,4 @@ void CMain_Window::On_About_Clicked() {
 											"Experimental ISA, assembler and emulator, created for educational purposes.<br><br>"
 											"Licensed under MIT license.<br><br>"
 											"<a href='https://github.com/MartinUbl/SArch32'>https://github.com/MartinUbl/SArch32</a>"));
-}
-
-void CDisplay_Widget::paintEvent(QPaintEvent* event)
-{
-	// prepare painter
-	QPainter painter;
-	painter.begin(this);
-
-	// fill background - default color is black
-	QRect r(0, 0, width(), height());
-	painter.fillRect(r, Qt::black);
-
-	// prepare pen (white)
-	setAttribute(Qt::WA_OpaquePaintEvent);
-	QPen linepen(Qt::red);
-	linepen.setWidth(1);
-	linepen.setColor(Qt::white);
-	painter.setRenderHint(QPainter::Antialiasing, false);
-	painter.setPen(linepen);
-
-	const size_t maxOffset = static_cast<size_t>(width() * height());
-
-	// go through the video memory
-	for (size_t i = 0; i < mDisplay_Buffer.size() && i < maxOffset; i++) {
-
-		uint8_t b = mDisplay_Buffer[i];
-
-		// 1 byte = 8 pixels (set = white, clear = black)
-		for (int j = 0; j < 8; j++) {
-			if (!(b & (1 << j))) {
-				continue;
-			}
-
-			int row = (static_cast<int>(i) * 8 + j) / width();
-			int col = (static_cast<int>(i) * 8 + j) % width();
-
-			painter.drawPoint(col, row);
-		}
-	}
-
-	QWidget::paintEvent(event);
-	painter.end();
-}
-
-void CDisplay_Widget::Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus) {
-
-	// TODO: solve this better, this is obviously ineffective, but serves as a starting point
-
-	if (!display->Is_Video_Memory_Changed()) {
-		return;
-	}
-
-	display->Clear_Video_Memory_Changed_Flag();
-
-	mDisplay_Buffer.resize(sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
-	bus.Read(sarch32::Video_Memory_Start, &mDisplay_Buffer[0], sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
-
-	emit repaint();
 }

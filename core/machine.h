@@ -80,7 +80,7 @@ namespace sarch32 {
 			// CPU context instance
 			CCPU_Context mContext;
 			// interrupt controller
-			CInterrupt_Controller mInterrupt_Ctl;
+			std::shared_ptr<CInterrupt_Controller> mInterrupt_Ctl;
 
 		public:
 			CMachine(uint32_t memory_size = Default_Memory_Size);
@@ -105,7 +105,7 @@ namespace sarch32 {
 			}
 
 			// retrieves an interrupt controller
-			CInterrupt_Controller& Get_Interrupt_Controller() {
+			std::shared_ptr<CInterrupt_Controller>& Get_Interrupt_Controller() {
 				return mInterrupt_Ctl;
 			}
 
