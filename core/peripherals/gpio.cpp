@@ -12,11 +12,11 @@ namespace sarch32 {
 		std::fill(mGPIO_Memory.begin(), mGPIO_Memory.end(), 0);
 	}
 
-	bool CGPIO_Controller::Is_GPIO_Memory_Changed() const {
+	bool CGPIO_Controller::Is_Memory_Changed() const {
 		return mGPIO_Mem_Changed;
 	}
 
-	void CGPIO_Controller::Clear_GPIO_Memory_Changed_Flag() {
+	void CGPIO_Controller::Clear_Memory_Changed_Flag() {
 		mGPIO_Mem_Changed = false;
 	}
 
@@ -95,7 +95,7 @@ namespace sarch32 {
 				{
 					for (uint32_t i = 0; i < 32; i++) {
 						if (setvalue & (1ULL << i)) {
-							Set_State(i, isClear);
+							Set_State(i, !isClear);
 						}
 					}
 					break;
@@ -107,7 +107,7 @@ namespace sarch32 {
 				{
 					for (uint32_t i = 0; i < 32; i++) {
 						if (setvalue & (1ULL << i)) {
-							Set_State(32 + i, isClear);
+							Set_State(32 + i, !isClear);
 						}
 					}
 					break;
@@ -127,6 +127,7 @@ namespace sarch32 {
 		// output pin - just set state
 		if (Get_Pin_Mode(pin) == NGPIO_Mode::Output) {
 			mGPIO_States[pin] = state;
+			mGPIO_Mem_Changed = true;
 		}
 		else if (Get_Pin_Mode(pin) == NGPIO_Mode::Input) {
 
@@ -150,13 +151,15 @@ namespace sarch32 {
 					}
 				}
 			}
+
+			mGPIO_Mem_Changed = true;
 		}
 
 	}
 
 	bool CGPIO_Controller::Get_State(uint32_t pin) const {
 
-		if (Get_Pin_Mode(pin) == NGPIO_Mode::Input) {
+		if (Get_Pin_Mode(pin) == NGPIO_Mode::Input || Get_Pin_Mode(pin) == NGPIO_Mode::Output) {
 			return mGPIO_States[pin];
 		}
 

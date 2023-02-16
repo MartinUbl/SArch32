@@ -74,6 +74,19 @@ namespace sarch32 {
 	};
 
 	/*
+	 * This peripheral has an indication of memory change
+	 */
+	class IMemory_Change_Notifier {
+		public:
+			virtual ~IMemory_Change_Notifier() = default;
+
+			// is there any change to peripheral memory?
+			virtual bool Is_Memory_Changed() const = 0;
+			// clear the changed flag
+			virtual void Clear_Memory_Changed_Flag() = 0;
+	};
+
+	/*
 	 * Default reference SArch32 machine
 	 */
 	class CMachine {

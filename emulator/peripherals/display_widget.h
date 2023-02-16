@@ -25,7 +25,7 @@ class CDisplay_Widget : public QWidget
 		}
 
 		// triggers repainting, considering the memory obtained through the bus
-		void Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus);
+		void Trigger_Repaint(std::shared_ptr<sarch32::IDisplay>& display, sarch32::CMemory_Bus& bus);
 
 		void paintEvent(QPaintEvent* event) override;
 };

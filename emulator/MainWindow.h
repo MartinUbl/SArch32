@@ -62,7 +62,7 @@ class CMain_Window : public QMainWindow {
 		// path to the memory object file used
 		std::string mObject_File;
 		// display peripheral
-		std::shared_ptr<sarch32::CDisplay_300x200> mDisplay;
+		std::shared_ptr<sarch32::IDisplay> mDisplay;
 		// GPIO controller peripheral
 		std::shared_ptr<sarch32::IGPIO_Controller> mGPIO_Ctl;
 		// timer peripheral
@@ -96,7 +96,10 @@ class CMain_Window : public QMainWindow {
 		void Refresh_Disassembly();
 		void Update_View_PC();
 		void Request_Update_Button_State();
-		void Request_Repaint();
+
+		void Request_Display_Repaint();
+		void Request_GPIO_Repaint();
+		void Request_UART_Repaint();
 
 	protected slots:
 		// view related slots
@@ -104,7 +107,10 @@ class CMain_Window : public QMainWindow {
 		void On_Refresh_Disassembly();
 		void On_Update_View_PC();
 		void On_Update_Button_State();
-		void On_Request_Repaint();
+
+		void On_Request_Display_Repaint();
+		void On_Request_GPIO_Repaint();
+		void On_Request_UART_Repaint();
 
 		// control related slots
 		void On_Step_Requested();

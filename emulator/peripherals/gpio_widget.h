@@ -67,5 +67,5 @@ class CGPIO_Widget : public QWidget
 		// sets up the GUI
 		void Setup_GUI();
 		// triggers repainting of all child widgets
-		void Trigger_Repaint();
+		void Trigger_Repaint(bool force = false);
 };

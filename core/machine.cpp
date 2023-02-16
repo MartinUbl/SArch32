@@ -193,6 +193,7 @@ namespace sarch32 {
 
 				// has pending IRQ? signalize
 				if (handleIRQs && mInterrupt_Ctl->Has_Pending_IRQ(IRQ_Channel_Any)) {
+					mInterrupt_Ctl->Clear_IRQ_Flag(IRQ_Channel_Any);
 					throw irq_exception();
 				}
 

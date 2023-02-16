@@ -42,15 +42,15 @@ void CDisplay_Widget::paintEvent(QPaintEvent* event)
 	painter.end();
 }
 
-void CDisplay_Widget::Trigger_Repaint(std::shared_ptr<sarch32::CDisplay_300x200>& display, sarch32::CMemory_Bus& bus) {
+void CDisplay_Widget::Trigger_Repaint(std::shared_ptr<sarch32::IDisplay>& display, sarch32::CMemory_Bus& bus) {
 
 	// TODO: solve this better, this is obviously ineffective, but serves as a starting point
 
-	if (!display->Is_Video_Memory_Changed()) {
+	if (!display->Is_Memory_Changed()) {
 		return;
 	}
 
-	display->Clear_Video_Memory_Changed_Flag();
+	display->Clear_Memory_Changed_Flag();
 
 	mDisplay_Buffer.resize(sarch32::Video_Memory_End - sarch32::Video_Memory_Start);
 	bus.Read(sarch32::Video_Memory_Start, &mDisplay_Buffer[0], sarch32::Video_Memory_End - sarch32::Video_Memory_Start);

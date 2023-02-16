@@ -252,15 +252,20 @@ void CMain_Window::On_Update_View_PC() {
 void CMain_Window::On_Step_Requested() {
 
 	// single step
-	mMachine->Step();
+	mMachine->Step(1, true);
 
 	// refresh register content and PC
 	emit Refresh_Registers();
 	emit Update_View_PC();
 
 	// request repaint
-	if (mDisplay) {
+	if (mDisplay && mDisplay_Widget) {
 		mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	}
+
+	// request GPIO update
+	if (mGPIO_Ctl && mGPIO_Widget) {
+		mGPIO_Widget->Trigger_Repaint();
 	}
 
 	// request UART update
@@ -271,9 +276,21 @@ void CMain_Window::On_Step_Requested() {
 	statusBar()->showMessage(tr("Step complete"));
 }
 
-void CMain_Window::On_Request_Repaint() {
+void CMain_Window::On_Request_Display_Repaint() {
 	if (mDisplay) {
 		mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
+	}
+}
+
+void CMain_Window::On_Request_GPIO_Repaint() {
+	if (mGPIO_Ctl) {
+		mGPIO_Widget->Trigger_Repaint();
+	}
+}
+
+void CMain_Window::On_Request_UART_Repaint() {
+	if (mUART_Ctl) {
+		mUART_Widget->Update_Console();
 	}
 }
 
@@ -325,13 +342,18 @@ void CMain_Window::Run_Thread_Fnc() {
 		mMachine->Step(1, true);
 
 		// request display update
-		if (mDisplay && mDisplay->Is_Video_Memory_Changed()) {
-			emit Request_Repaint();
+		if (mDisplay && mDisplay->Is_Memory_Changed()) {
+			emit Request_Display_Repaint();
+		}
+
+		// request GPIO update
+		if (mGPIO_Ctl && mGPIO_Widget) {
+			emit Request_GPIO_Repaint();
 		}
 
 		// request UART update
 		if (mUART_Ctl && mUART_Widget) {
-			mUART_Widget->Update_Console();
+			emit Request_UART_Repaint();
 		}
 
 		// detect stalling - an infinite loop
@@ -569,7 +591,10 @@ void CMain_Window::Setup_GUI() {
 	connect(this, SIGNAL(Refresh_Disassembly()), this, SLOT(On_Refresh_Disassembly()));
 	connect(this, SIGNAL(Update_View_PC()), this, SLOT(On_Update_View_PC()));
 	connect(this, SIGNAL(Request_Update_Button_State()), this, SLOT(On_Update_Button_State()));
-	connect(this, SIGNAL(Request_Repaint()), this, SLOT(On_Request_Repaint()));
+
+	connect(this, SIGNAL(Request_Display_Repaint()), this, SLOT(On_Request_Display_Repaint()));
+	connect(this, SIGNAL(Request_GPIO_Repaint()), this, SLOT(On_Request_GPIO_Repaint()));
+	connect(this, SIGNAL(Request_UART_Repaint()), this, SLOT(On_Request_UART_Repaint()));
 
 	statusBar()->setStyleSheet("QStatusBar{ border-top: 1px outset grey; }");
 	statusBar()->showMessage(tr("Ready"));

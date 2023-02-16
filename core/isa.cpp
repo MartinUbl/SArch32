@@ -1136,8 +1136,8 @@ std::unique_ptr<CInstruction> CInstruction::Build_From_String(const std::string&
 	std::transform(line.begin(), line.end(), std::back_inserter(input), [](unsigned char c) { return std::tolower(c); });
 
 	// regular expressions for instruction parsing
-	std::regex instr_2op{ "^[\\s]{0,}([a-z]+[a-z0-9]*[\\.]{0,1}[a-z]{0,2})[\\s]+([a-z]+[a-z0-9]*)[\\s]*,[\\s]*([a-z#\\$]{1}[\\-a-z0-9]*)[\\s]*(;.*)?$", std::regex::ECMAScript };
-	std::regex instr_1op{ "^[\\s]{0,}([a-z]+[a-z0-9]*[\\.]{0,1}[a-z]{0,2})[\\s]+([a-z#\\$]{1}[\\-a-z0-9]*)[\\s]*(;.*)?$", std::regex::ECMAScript };
+	std::regex instr_2op{ "^[\\s]{0,}([a-z]+[a-z0-9]*[\\.]{0,1}[a-z]{0,2})[\\s]+([a-z]+[a-z0-9]*)[\\s]*,[\\s]*([a-z#\\$]{1}[\\-a-z0-9_]*)[\\s]*(;.*)?$", std::regex::ECMAScript };
+	std::regex instr_1op{ "^[\\s]{0,}([a-z]+[a-z0-9]*[\\.]{0,1}[a-z]{0,2})[\\s]+([a-z#\\$]{1}[\\-a-z0-9_]*)[\\s]*(;.*)?$", std::regex::ECMAScript };
 	std::regex instr_0op{ "^[\\s]{0,}([a-z]+[a-z0-9]*[\\.]{0,1}[a-z]{0,2})[\\s]*(;.*)?$", std::regex::ECMAScript };
 	std::regex cond_parse{ "^([a-z0-9]+)(\\.[a-z]+)?$", std::regex::ECMAScript };
 

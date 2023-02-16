@@ -12,11 +12,11 @@ namespace sarch32 {
 		std::fill(mVideo_Memory.begin(), mVideo_Memory.end(), 0);
 	}
 
-	bool CDisplay_300x200::Is_Video_Memory_Changed() const {
+	bool CDisplay_300x200::Is_Memory_Changed() const {
 		return mVideo_Mem_Changed;
 	}
 
-	void CDisplay_300x200::Clear_Video_Memory_Changed_Flag() {
+	void CDisplay_300x200::Clear_Memory_Changed_Flag() {
 		mVideo_Mem_Changed = false;
 	}
 

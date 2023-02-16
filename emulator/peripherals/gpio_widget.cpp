@@ -111,13 +111,20 @@ void CGPIO_Widget::Setup_GUI() {
 		}
 	}
 
-	Trigger_Repaint();
+	Trigger_Repaint(true);
 }
 
-void CGPIO_Widget::Trigger_Repaint() {
+void CGPIO_Widget::Trigger_Repaint(bool force) {
 
 	// refresh state
 	if (auto ctl = mGPIO_Ctl.lock()) {
+
+		if (!ctl->Is_Memory_Changed() && !force) {
+			return;
+		}
+
+		ctl->Clear_Memory_Changed_Flag();
+
 		for (uint32_t i = 0; i < ctl->Get_Pin_Count(); i++) {
 			if (mGPIO_Btns[i])
 				mGPIO_Btns[i]->Set_State(ctl->Get_Mode(i), ctl->Get_State(i));

@@ -79,7 +79,7 @@ namespace sarch32 {
 	/*
 	 * GPIO controller interface
 	 */
-	class IGPIO_Controller {
+	class IGPIO_Controller : public IMemory_Change_Notifier {
 		public:
 			virtual void Set_State(uint32_t pin, bool state) = 0;
 			virtual bool Get_State(uint32_t pin) const = 0;
@@ -124,11 +124,6 @@ namespace sarch32 {
 			// clears video memory
 			void Clear_GPIO_Memory();
 
-			// was there a change to GPIO state?
-			bool Is_GPIO_Memory_Changed() const;
-			// clear GPIO memory change flag
-			void Clear_GPIO_Memory_Changed_Flag();
-
 			// IPeripheral iface
 			virtual void Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) override;
 			virtual void Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) override;
@@ -142,6 +137,10 @@ namespace sarch32 {
 			virtual uint32_t Get_Pin_Count() const override {
 				return GPIO_Count;
 			}
+
+			// IMemory_Change_Notifier iface
+			virtual bool Is_Memory_Changed() const override;
+			virtual void Clear_Memory_Changed_Flag() override;
 	};
 
 }
