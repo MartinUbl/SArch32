@@ -11,6 +11,9 @@ namespace sarch32 {
 	// default size of main memory
 	constexpr uint32_t Default_Memory_Size = 2 * 1024 * 1024; // 2 MiB
 
+	// default assumed CPI for every instruction - this is just a mean that is used to approximate the CPI for simulated clock source
+	constexpr uint32_t Default_Mean_CPI = 8; // qualified guess
+
 	template<typename T>
 	concept Child_Of_IPeripheral = std::derived_from<T, IPeripheral>;
 
@@ -82,6 +85,8 @@ namespace sarch32 {
 			// interrupt controller
 			std::shared_ptr<CInterrupt_Controller> mInterrupt_Ctl;
 
+			std::list<std::shared_ptr<IPeripheral>> mPeripherals;
+
 		public:
 			CMachine(uint32_t memory_size = Default_Memory_Size);
 			virtual ~CMachine() = default;
@@ -114,6 +119,8 @@ namespace sarch32 {
 				std::shared_ptr<T> peripheral = std::make_shared<T>(args...);
 
 				peripheral->Attach(mMem_Bus, mInterrupt_Ctl);
+
+				mPeripherals.push_back(peripheral);
 
 				return peripheral;
 			}

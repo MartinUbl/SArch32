@@ -20,6 +20,7 @@
 #include "../core/machine.h"
 #include "../core/peripherals/display.h"
 #include "../core/peripherals/gpio.h"
+#include "../core/peripherals/timer.h"
 
 #include "config.h"
 #include "peripherals/display_widget.h"
@@ -60,6 +61,8 @@ class CMain_Window : public QMainWindow {
 		std::shared_ptr<sarch32::CDisplay_300x200> mDisplay;
 		// GPIO controller peripheral
 		std::shared_ptr<sarch32::CGPIO_Controller> mGPIO_Ctl;
+		// timer peripheral
+		std::shared_ptr<sarch32::CSystem_Timer> mTimer_Ctl;
 
 		// structure helper for finding the location of PC
 		struct TSection_Break {

@@ -57,6 +57,15 @@ bool CMain_Window::Setup_Machine(const CConfig& config) {
 				return false;
 			}
 		}
+		else if (p.first == "timer") {
+			if (p.second == "default" || p.second == "systimer") {
+				mTimer_Ctl = mMachine->Attach_Peripheral<sarch32::CSystem_Timer>();
+			}
+			else {
+				QMessageBox::critical(nullptr, "Error", tr("Unknown timer: {}").arg(QString::fromStdString(p.second)));
+				return false;
+			}
+		}
 		else {
 			QMessageBox::critical(nullptr, "Error", tr("Unknown peripheral: {}").arg(QString::fromStdString(p.first)));
 			return false;

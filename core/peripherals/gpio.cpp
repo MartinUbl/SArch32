@@ -49,12 +49,12 @@ namespace sarch32 {
 
 			// level registers are special - the do not have physical memory assigned, but rather represents a set of pin states
 			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Level_1)) {
-				const uint32_t pinBank = (registerIdx - static_cast<size_t>(NGPIO_Registers::Level_0)) * 32;
+				const uint32_t pinBank = static_cast<uint32_t>((registerIdx - static_cast<size_t>(NGPIO_Registers::Level_0)) * 32);
 
 				uint32_t val = 0;
 				for (uint32_t i = 0; i < 32; i++) {
 					val <<= 1;
-					val |= mGPIO_States[pinBank + i];
+					val |= (mGPIO_States[pinBank + i] ? 0b1 : 0b0);
 				}
 
 				*reinterpret_cast<uint32_t*>(target) = val;
@@ -90,7 +90,7 @@ namespace sarch32 {
 			switch (static_cast<NGPIO_Registers>(registerIdx)) {
 				case NGPIO_Registers::Set_0:
 					isClear = false;
-					[[fallthrough]]
+					[[fallthrough]];
 				case NGPIO_Registers::Clear_0:
 				{
 					for (uint32_t i = 0; i < 32; i++) {
@@ -102,7 +102,7 @@ namespace sarch32 {
 				}
 				case NGPIO_Registers::Set_1:
 					isClear = false;
-					[[fallthrough]]
+					[[fallthrough]];
 				case NGPIO_Registers::Clear_1:
 				{
 					for (uint32_t i = 0; i < 32; i++) {

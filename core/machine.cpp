@@ -182,6 +182,15 @@ namespace sarch32 {
 
 			try {
 
+				/*
+				 * The clock source is emulated as well, so we try to approximate the CPI with its mean value and step all peripherals
+				 * by this amount of clock cycles. In reality, CPI varies for each instruction, as it depends on the instruction complexity
+				 * e.g., the phases of instruction processing (fetch, decode, execute, writeback and more stages), caches, memory accesses, etc.
+				 */
+				for (auto p : mPeripherals) {
+					p->Clock_Cycles_Passed(Default_Mean_CPI);
+				}
+
 				// has pending IRQ? signalize
 				if (handleIRQs && mInterrupt_Ctl->Has_Pending_IRQ(IRQ_Channel_Any)) {
 					throw irq_exception();

@@ -18,7 +18,7 @@ This repositor contains a core project (containing all ISA-related definitions),
 |Extended debugger|⏳|Supports stepping, run/pause|
 |Debugger support for instruction decoder|❌||
 |Memory dump|❌||
-|Modular emulator|❌|support for module connection|
+|Modular emulator|❌||
 |Configuration|✅||
 |ISA documentation|❌||
 |CPU exceptions|✅||
@@ -35,7 +35,7 @@ Legend: ✅ - full support, ⏳ - partial support, ❌ - not yet implemented
 |---|---|---|
 |300x200 emulated monochromatic display|✅|video memory mapped to bus|
 |GPIO controller|✅||
-|Timer|❌||
+|Timer|✅||
 |UART|❌||
 |DMA|❌||
 |PCM/Audio controller|❌||

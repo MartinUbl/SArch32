@@ -324,6 +324,8 @@ class IPeripheral
 		virtual void Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) = 0;
 		// detachs peripheral from the bus and interrupt controller
 		virtual void Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) = 0;
+		// the outer clock source signalizes the number of clock cycles that has passed - the count parameter is there for simplistic reasons (usually the clock source is incremented by a higher number of cycles in single simulation step)
+		virtual void Clock_Cycles_Passed(uint32_t count) { };
 
 		// reads from given address of peripheral memory, stores the read bytes of given amount into target pointer
 		virtual void Read_Memory(uint32_t address, void* target, uint32_t size) const = 0;
