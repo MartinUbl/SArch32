@@ -12,11 +12,11 @@ class CConfig {
 	
 	private:
 		// machine name
-		std::string mMachine_Name;
+		std::string mMachine_Name{};
 		// size of memory (bytes)
-		uint32_t mMemory_Size;
+		uint32_t mMemory_Size = 2*1024*1024;
 		// memory image (SObj file)
-		std::string mMemory_Image;
+		std::string mMemory_Image{};
 		// connected peripherals
 		std::map<std::string, std::string> mPeripherals;
 

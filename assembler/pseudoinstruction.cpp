@@ -40,7 +40,7 @@ bool CPseudo_Instruction_Data::Parse_String(const std::string& mnemonic, const s
 
 			auto r = Parse_Any(op);
 			if (r.Is_Immediate()) {
-				auto imm = r.Get_Immediate();
+				const auto imm = r.Get_Immediate();
 
 				// TODO: check limits
 
@@ -104,7 +104,7 @@ std::string CPseudo_Instruction_Data::Generate_String(bool hexaFmt) const {
 	size_t cur = 0;
 	while (cur < mData.size()) {
 
-		int32_t imm;
+		int32_t imm = 0;
 
 		if (desiredOpLen == 1)
 			imm = Restore<1>(cur);

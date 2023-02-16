@@ -10,9 +10,9 @@ namespace SObj {
 
 	// structure of a section (loaded into memory)
 	struct TSection {
-		uint32_t startAddr;
-		uint32_t size;
-		std::vector<uint8_t> data;
+		uint32_t startAddr = 0;
+		uint32_t size = 0;
+		std::vector<uint8_t> data{};
 	};
 
 	/*

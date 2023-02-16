@@ -26,11 +26,11 @@ namespace sarch32 {
 		}
 
 		// detect invalid memory access
-		if (address + size > mMain_Memory.size()) {
+		if (static_cast<size_t>(address) + static_cast<size_t>(size) > mMain_Memory.size()) {
 			throw abort_exception{ address };
 		}
 
-		std::copy_n(mMain_Memory.begin() + address, size, reinterpret_cast<uint8_t*>(target));
+		std::copy_n(mMain_Memory.begin() + address, size, static_cast<uint8_t*>(target));
 	}
 
 	void CMemory_Bus::Write(uint32_t address, const void* source, uint32_t size) {
@@ -43,11 +43,11 @@ namespace sarch32 {
 		}
 
 		// detect invalid memory access
-		if (address + size > mMain_Memory.size()) {
+		if (static_cast<size_t>(address) + static_cast<size_t>(size) > mMain_Memory.size()) {
 			throw abort_exception{ address };
 		}
 
-		std::copy_n(reinterpret_cast<const uint8_t*>(source), size, mMain_Memory.begin() + address);
+		std::copy_n(static_cast<const uint8_t*>(source), size, mMain_Memory.begin() + address);
 	}
 
 	bool CMemory_Bus::Map_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) {
@@ -71,7 +71,7 @@ namespace sarch32 {
 		return true;
 	}
 
-	bool CMemory_Bus::Unmap_Peripheral(std::shared_ptr<IPeripheral> peripheral, uint32_t address, uint32_t length) {
+	bool CMemory_Bus::Unmap_Peripheral(std::shared_ptr<IPeripheral> /*peripheral*/, uint32_t address, uint32_t length) {
 
 		for (auto itr = mPeripheral_Memory.begin(); itr != mPeripheral_Memory.end(); ) {
 			if (itr->addressStart == address && itr->length == length) {
@@ -87,7 +87,7 @@ namespace sarch32 {
 
 	bool CMemory_Bus::Load_Bytes_To(const std::vector<uint8_t>& bytes, uint32_t address) {
 
-		if (address + static_cast<uint32_t>(bytes.size()) > mMain_Memory.size()) {
+		if (static_cast<size_t>(address) + static_cast<size_t>(bytes.size()) > mMain_Memory.size()) {
 			return false;
 		}
 
@@ -196,7 +196,7 @@ namespace sarch32 {
 					throw irq_exception();
 				}
 
-				uint32_t encoded;
+				uint32_t encoded = 0;
 
 				if ((mContext.Reg(NRegister::PC) & 0b11) != 0) {
 					throw unaligned_exception();
@@ -211,7 +211,7 @@ namespace sarch32 {
 					// just rethrow the exception to outer scope
 					throw;
 				}
-				catch (std::exception& ex) {
+				catch (const std::exception& ex) {
 					std::cerr << "Unhandled machine unrelated exception: " << ex.what() << std::endl;
 					continue;
 				}

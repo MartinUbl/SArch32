@@ -37,7 +37,7 @@ class CMain_Window : public QMainWindow {
 		// widgets
 
 		// register labels
-		std::array<QLabel*, Register_Count> mReg_Labels;
+		std::array<QLabel*, Register_Count> mReg_Labels{};
 		// disassembly text area
 		QTextEdit* mDisassembly;
 		// 300x200 display

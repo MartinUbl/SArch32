@@ -67,7 +67,7 @@ bool CAssembler::Assemble_File(const std::string& path) {
 				mSection_Offsets[mCurrent_Section] += instrLen;
 			}
 		}
-		catch (std::exception& ex) {
+		catch (const std::exception& ex) {
 			std::cerr << "Exception: " << ex.what() << std::endl;
 		}
 	}
@@ -157,7 +157,7 @@ bool CAssembler::Resolve_Symbols() {
 		}
 
 		// actual address = section starting address + symbol offset
-		auto addr = static_cast<int32_t>(slink->second.startAddr + sym->second.byteOffset);
+		const auto addr = static_cast<int32_t>(slink->second.startAddr + sym->second.byteOffset);
 
 		Log(NLog_Level::Extended, "Resolving symbol", rr.symbol, "to", addr);
 
@@ -216,7 +216,7 @@ bool CAssembler::Assemble() {
 
 	// 2) assemble all input files
 	for (auto& inputFile : mInput.Input_Files) {
-		bool result = Assemble_File(inputFile);
+		const bool result = Assemble_File(inputFile);
 		if (!result)
 			return false;
 	}

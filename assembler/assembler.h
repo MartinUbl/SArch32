@@ -48,8 +48,8 @@ class CAssembler {
 
 		// label reference for linkage
 		struct TLabel_Ref {
-			std::string section;
-			size_t byteOffset;
+			std::string section{};
+			size_t byteOffset = 0;
 		};
 
 		// assembled instructions and data, sorted to sections
@@ -74,9 +74,9 @@ class CAssembler {
 
 		// definition of linker section (from the linker file)
 		struct TLinker_Section_Def {
-			std::string section;
-			uint32_t startAddr;
-			uint32_t limit;
+			std::string section{};
+			uint32_t startAddr = 0;
+			uint32_t limit = 0;
 		};
 
 		// stored linker sections from linker file

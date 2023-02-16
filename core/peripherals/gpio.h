@@ -119,7 +119,7 @@ namespace sarch32 {
 			void Set_Pin_Mode(uint32_t pinNo, NGPIO_Mode mode);
 
 		public:
-			CGPIO_Controller();
+			CGPIO_Controller() noexcept;
 
 			// clears video memory
 			void Clear_GPIO_Memory();

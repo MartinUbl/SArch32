@@ -25,7 +25,7 @@ namespace sarch32 {
 			bool mVideo_Mem_Changed = false;
 
 		public:
-			CDisplay_300x200();
+			CDisplay_300x200() noexcept;
 
 			// clears video memory
 			void Clear_Video_Memory();

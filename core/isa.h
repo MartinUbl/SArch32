@@ -96,7 +96,7 @@ class reset_exception : public std::runtime_error {
 // the CPU was signaled with an external interrupt request
 class irq_exception : public std::runtime_error {
 	public:
-		irq_exception() : std::runtime_error{ "Interrupt request was signalized" } {
+		irq_exception() noexcept : std::runtime_error{ "Interrupt request was signalized" } {
 			//
 		}
 };
@@ -111,7 +111,7 @@ class abort_exception : public std::runtime_error {
 			//
 		}
 
-		const uint32_t Get_Address() const {
+		const uint32_t Get_Address() const noexcept {
 			return mAbort_Address;
 		}
 };
@@ -119,7 +119,7 @@ class abort_exception : public std::runtime_error {
 // the CPU attempted to decode an invalid instruction
 class undefined_instruction_exception : public std::runtime_error {
 	public:
-		undefined_instruction_exception() : std::runtime_error{ "Undefined instruction at given PC" } {
+		undefined_instruction_exception() noexcept : std::runtime_error{ "Undefined instruction at given PC" } {
 			//
 		}
 };
@@ -127,7 +127,7 @@ class undefined_instruction_exception : public std::runtime_error {
 // exception thrown by CPU when unaligned access is detected
 class unaligned_exception : public std::runtime_error {
 	public:
-		unaligned_exception() : std::runtime_error{ "Unaligned access to memory for instruction fetch" } {
+		unaligned_exception() noexcept : std::runtime_error{ "Unaligned access to memory for instruction fetch" } {
 			//
 		}
 };
@@ -138,11 +138,11 @@ class supervisor_call_exception : public std::runtime_error {
 		int32_t mSvc_Num;
 
 	public:
-		supervisor_call_exception(int32_t svcNum) : std::runtime_error{ "Supervisor call (not an error)" }, mSvc_Num(svcNum) {
+		supervisor_call_exception(int32_t svcNum) noexcept : std::runtime_error{ "Supervisor call (not an error)" }, mSvc_Num(svcNum) {
 			//
 		}
 
-		const int32_t Get_Svc_Number() const {
+		const int32_t Get_Svc_Number() const noexcept {
 			return mSvc_Num;
 		}
 };
@@ -150,7 +150,7 @@ class supervisor_call_exception : public std::runtime_error {
 // exception thrown by CPU when an exception occurred during exception handling, e.g., when the CPU cannot read the IVT, ...
 class unrecoverable_exception : public std::runtime_error {
 	public:
-		unrecoverable_exception() : std::runtime_error{ "Unrecoverable error during exception handling (double fault)" } {
+		unrecoverable_exception() noexcept : std::runtime_error{ "Unrecoverable error during exception handling (double fault)" } {
 			//
 		}
 };
@@ -254,7 +254,7 @@ class sarch32_parser_exception : public std::exception {
 			//
 		}
 
-		[[nodiscard]] char const* what() const override
+		[[nodiscard]] char const* what() const noexcept override
 		{
 			return mWhat.c_str();
 		}
@@ -272,7 +272,7 @@ class sarch32_generator_exception : public std::exception {
 			//
 		}
 
-		[[nodiscard]] char const* what() const override
+		[[nodiscard]] char const* what() const noexcept override
 		{
 			return mWhat.c_str();
 		}
@@ -286,6 +286,8 @@ class IPeripheral;
 class IBus
 {
 	public:
+		virtual ~IBus() = default;
+
 		// reads from given address, stores the read bytes of given amount into target pointer
 		virtual void Read(uint32_t address, void* target, uint32_t size) const = 0;
 		// writes to a given address, places the bytes from source pointer to the memory
@@ -306,6 +308,8 @@ constexpr int16_t IRQ_Channel_Any = -1;
 class IInterrupt_Controller
 {
 	public:
+		virtual ~IInterrupt_Controller() = default;
+
 		// signalizes IRQ
 		virtual void Signalize_IRQ(int16_t channel) = 0;
 		// does the interrupt controller hold a pending IRQ?
@@ -320,6 +324,8 @@ class IInterrupt_Controller
 class IPeripheral
 {
 	public:
+		virtual ~IPeripheral() = default;
+
 		// attachs peripheral to the bus and interrupt controller
 		virtual void Attach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) = 0;
 		// detachs peripheral from the bus and interrupt controller
@@ -414,19 +420,19 @@ class COperand {
 		std::variant<int32_t, NRegister, std::string> mValue;
 
 	public:
-		COperand() : mType{ NOperand_Type::None }, mValue{ 0 } {
+		COperand() noexcept : mType{ NOperand_Type::None }, mValue{ 0 } {
 			//
 		}
 
-		COperand(int32_t value) : mType{ NOperand_Type::Immediate }, mValue{ value } {
+		COperand(int32_t value) noexcept : mType{ NOperand_Type::Immediate }, mValue{ value } {
 			//
 		}
 
-		COperand(NRegister value) : mType{ NOperand_Type::Register }, mValue{ value } {
+		COperand(NRegister value) noexcept : mType{ NOperand_Type::Register }, mValue{ value } {
 			//
 		}
 
-		COperand(const std::string& symbol) : mType{ NOperand_Type::Immediate_Symbolic }, mValue{ symbol } {
+		COperand(const std::string& symbol) noexcept : mType{ NOperand_Type::Immediate_Symbolic }, mValue{ symbol } {
 			//
 		}
 
@@ -508,7 +514,7 @@ class CInstruction
 				uint8_t bytedmp[4];
 			} dump;
 
-			std::copy(bytes.begin(), bytes.end(), dump.bytedmp);
+			std::copy(bytes.begin(), bytes.end(), &dump.bytedmp[0]);
 
 			return dump.conv;
 		}

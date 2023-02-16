@@ -23,7 +23,7 @@ void CGPIO_Pin_Button_Widget::paintEvent(QPaintEvent* event)
 	painter.begin(this);
 
 	// fill background - default color is black
-	QRect r(0, 0, width(), height());
+	const QRect r(0, 0, width(), height());
 	painter.fillRect(r, Qt::transparent);
 
 	// prepare pen
@@ -66,7 +66,7 @@ void CGPIO_Pin_Button_Widget::paintEvent(QPaintEvent* event)
 	painter.setPen(linepen);
 
 	QFontMetrics fm(painter.font());
-	auto tw = fm.horizontalAdvance(str);
+	const auto tw = fm.horizontalAdvance(str);
 
 	painter.drawText((width() / 2) - (tw / 2), (height() / 2) + 4, str);
 
@@ -126,7 +126,9 @@ void CGPIO_Widget::Trigger_Repaint() {
 
 	// repaing widgets
 	for (auto btn : mGPIO_Btns) {
-		btn->Trigger_Repaint();
+		if (btn) {
+			btn->Trigger_Repaint();
+		}
 	}
 }
 

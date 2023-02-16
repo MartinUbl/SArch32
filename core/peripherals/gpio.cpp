@@ -3,7 +3,7 @@
 
 namespace sarch32 {
 
-	CGPIO_Controller::CGPIO_Controller() : mGPIO_Memory{} {
+	CGPIO_Controller::CGPIO_Controller() noexcept : mGPIO_Memory{} {
 		//
 	}
 
@@ -26,13 +26,13 @@ namespace sarch32 {
 		mInterrupt_Ctl = interruptCtl;
 	}
 
-	void CGPIO_Controller::Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) {
+	void CGPIO_Controller::Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> /*interruptCtl*/) {
 		bus.Unmap_Peripheral(shared_from_this(), GPIO_Memory_Start, GPIO_Memory_End - GPIO_Memory_Start);
 	}
 
 	void CGPIO_Controller::Read_Memory(uint32_t address, void* target, uint32_t size) const {
 
-		if (size != 4) {
+		if (size != 4 || !target) {
 			return;
 		}
 
@@ -49,18 +49,18 @@ namespace sarch32 {
 
 			// level registers are special - the do not have physical memory assigned, but rather represents a set of pin states
 			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Level_1)) {
-				const uint32_t pinBank = static_cast<uint32_t>((registerIdx - static_cast<size_t>(NGPIO_Registers::Level_0)) * 32);
+				const size_t pinBank = (registerIdx - static_cast<size_t>(NGPIO_Registers::Level_0)) * 32;
 
 				uint32_t val = 0;
-				for (uint32_t i = 0; i < 32; i++) {
+				for (size_t i = 0; i < 32; i++) {
 					val <<= 1;
 					val |= (mGPIO_States[pinBank + i] ? 0b1 : 0b0);
 				}
 
-				*reinterpret_cast<uint32_t*>(target) = val;
+				*static_cast<uint32_t*>(target) = val;
 			}
 			else {
-				*reinterpret_cast<uint32_t*>(target) = mGPIO_Memory[registerIdx];
+				*static_cast<uint32_t*>(target) = mGPIO_Memory[registerIdx];
 			}
 		}
 
@@ -68,7 +68,7 @@ namespace sarch32 {
 
 	void CGPIO_Controller::Write_Memory(uint32_t address, const void* source, uint32_t size) {
 
-		if (size != 4) {
+		if (size != 4 || !source) {
 			return;
 		}
 
@@ -77,7 +77,7 @@ namespace sarch32 {
 			const uint32_t offset = (address - GPIO_Memory_Start);
 			const size_t registerIdx = static_cast<size_t>(offset / 4);
 
-			const uint32_t setvalue = *reinterpret_cast<const uint32_t*>(source);
+			const uint32_t setvalue = *static_cast<const uint32_t*>(source);
 
 			// attempt to write to read-only registers
 			if (registerIdx >= static_cast<size_t>(NGPIO_Registers::Level_0) && registerIdx <= static_cast<size_t>(NGPIO_Registers::Level_1)) {
@@ -130,7 +130,7 @@ namespace sarch32 {
 		}
 		else if (Get_Pin_Mode(pin) == NGPIO_Mode::Input) {
 
-			bool change = (mGPIO_States[pin] != state);
+			const bool change = (mGPIO_States[pin] != state);
 
 			mGPIO_States[pin] = state;
 
@@ -164,7 +164,7 @@ namespace sarch32 {
 	}
 
 	NGPIO_Mode_Generic CGPIO_Controller::Get_Mode(uint32_t pin) const {
-		auto mode = Get_Pin_Mode(pin);
+		const auto mode = Get_Pin_Mode(pin);
 
 		if (mode == NGPIO_Mode::Input)
 			return NGPIO_Mode_Generic::Input;

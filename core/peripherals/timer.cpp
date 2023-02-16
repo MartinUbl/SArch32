@@ -14,7 +14,7 @@ namespace sarch32 {
 		mInterrupt_Ctl = interruptCtl;
 	}
 
-	void CSystem_Timer::Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> interruptCtl) {
+	void CSystem_Timer::Detach(IBus& bus, std::shared_ptr<IInterrupt_Controller> /*interruptCtl*/) {
 		bus.Unmap_Peripheral(shared_from_this(), Timer_Memory_Start, Timer_Memory_End - Timer_Memory_Start);
 	}
 
@@ -78,7 +78,7 @@ namespace sarch32 {
 
 	void CSystem_Timer::Read_Memory(uint32_t address, void* target, uint32_t size) const {
 
-		if (size != 4) {
+		if (size != 4 || !target) {
 			return;
 		}
 
@@ -88,14 +88,14 @@ namespace sarch32 {
 			const uint32_t offset = (address - Timer_Memory_Start);
 			const size_t registerIdx = static_cast<size_t>(offset / 4);
 
-			*reinterpret_cast<uint32_t*>(target) = mTimer_Memory[registerIdx];
+			*static_cast<uint32_t*>(target) = mTimer_Memory[registerIdx];
 		}
 
 	}
 
 	void CSystem_Timer::Write_Memory(uint32_t address, const void* source, uint32_t size) {
 
-		if (size != 4) {
+		if (size != 4 || !source) {
 			return;
 		}
 
@@ -109,7 +109,7 @@ namespace sarch32 {
 				return;
 			}
 
-			mTimer_Memory[registerIdx] = *reinterpret_cast<const uint32_t*>(source);
+			mTimer_Memory[registerIdx] = *static_cast<const uint32_t*>(source);
 		}
 
 	}

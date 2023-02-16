@@ -154,8 +154,8 @@ void CMain_Window::On_Refresh_Disassembly() {
 			// try to format the instruction
 			try {
 				// parse binary, build instruction object and generate string
-				uint32_t binary = *reinterpret_cast<uint32_t*>(&s.data[cur]);
-				auto instr = CInstruction::Build_From_Binary(binary);
+				const uint32_t binary = *reinterpret_cast<uint32_t*>(&s.data[cur]);
+				const auto instr = CInstruction::Build_From_Binary(binary);
 
 				oss << instr->Generate_String(mIs_Hexa);
 			}
@@ -209,7 +209,7 @@ void CMain_Window::On_Refresh_Disassembly() {
 void CMain_Window::On_Update_View_PC() {
 
 	// retrieve PC and match the section that contains the address
-	uint32_t pc = mMachine->Get_CPU_Context().Reg(NRegister::PC);
+	const uint32_t pc = mMachine->Get_CPU_Context().Reg(NRegister::PC);
 	size_t lineIdx = 0;
 	for (size_t i = 0; i < mSection_Breaks.size(); i++) {
 		if (mSection_Breaks[i].startAddr <= pc) {
@@ -221,8 +221,8 @@ void CMain_Window::On_Update_View_PC() {
 	// create "extra" selection to mark the line of the PC occurrence
 	QList<QTextEdit::ExtraSelection> extraSelections;
 	QTextEdit::ExtraSelection selection;
-	QColor lineBgColor = QColor(Qt::green).lighter(100);
-	QColor lineFgColor = QColor(Qt::black);
+	const QColor lineBgColor = QColor(Qt::green).lighter(100);
+	const QColor lineFgColor = QColor(Qt::black);
 	selection.format.setBackground(lineBgColor);
 	selection.format.setForeground(lineFgColor);
 	selection.format.setProperty(QTextFormat::FullWidthSelection, true);

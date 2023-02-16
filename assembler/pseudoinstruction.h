@@ -50,7 +50,7 @@ class CPseudo_Instruction_Data : public CInstruction
 
 		virtual bool Parse_String(const std::string& mnemonic, const std::vector<std::string>& operands) override;
 
-		virtual bool Parse_Binary(const uint32_t instruction) {
+		virtual bool Parse_Binary(const uint32_t instruction) override {
 			// this instruction is never parsed from binary
 			return true;
 		};
@@ -81,7 +81,7 @@ class CPseudo_Instruction_Data : public CInstruction
 			return false;
 		}
 
-		virtual uint32_t Get_Length() const {
+		virtual uint32_t Get_Length() const override {
 			return static_cast<uint32_t>(mData.size());
 		}
 };

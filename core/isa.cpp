@@ -285,17 +285,17 @@ class CInstruction_Nop : public CInstruction
 		virtual bool Parse_String(const std::string& mnemonic, const std::vector<std::string>& operands) override {
 			return Validate_Argc(operands, 0);
 		};
-		virtual bool Parse_Binary(const uint32_t instruction) {
+		virtual bool Parse_Binary(const uint32_t instruction) override {
 			return true; // opcode was parsed by parser, rest is ignored
 		};
-		virtual std::string Generate_String(bool hexaFmt) const {
+		virtual std::string Generate_String(bool hexaFmt) const override {
 			return Opcode_To_Mnemonic.find(Get_Opcode())->second;
 		};
-		virtual uint32_t Generate_Binary() const {
+		virtual uint32_t Generate_Binary() const override {
 			return Encode_From_Bytes({ Encode_MSB(), 0, 0, 0 });
 		};
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 			// NOP = literally do nothing
 			return true;
 		}
@@ -341,7 +341,7 @@ class CInstruction_Generic_2Param : public CInstruction
 			return true;
 		};
 
-		virtual bool Parse_Binary(const uint32_t instruction) {
+		virtual bool Parse_Binary(const uint32_t instruction) override {
 			auto bytes = Decode_From_Bytes(instruction);
 
 			if (!Is_Immediate_Instruction() && mOpcode != NOpcode::aps) {
@@ -358,7 +358,7 @@ class CInstruction_Generic_2Param : public CInstruction
 			return true;
 		};
 
-		virtual std::string Generate_String(bool hexaFmt) const {
+		virtual std::string Generate_String(bool hexaFmt) const override {
 			return Opcode_To_Mnemonic.find(Get_Opcode())->second + (mCondition == NCondition::always ? "" : ("."+Cond_To_Mnemonic.find(Get_Condition())->second)) + " " + Register_To_Mnemonic.find(mDst.Get_Register())->second + ", " +
 				(mSrc.Is_Immediate()
 					?
@@ -367,7 +367,7 @@ class CInstruction_Generic_2Param : public CInstruction
 					(mSrc.Is_Symbolic() ? "$" + mSrc.Get_Symbol() : Register_To_Mnemonic.find(mSrc.Get_Register())->second));
 		};
 
-		virtual uint32_t Generate_Binary() const {
+		virtual uint32_t Generate_Binary() const override {
 
 			if (mSrc.Is_Immediate()) {
 				if (mSrc.Get_Immediate() > std::numeric_limits<int16_t>::max() || mSrc.Get_Immediate() < std::numeric_limits<int16_t>::min())
@@ -388,7 +388,7 @@ class CInstruction_Generic_2Param : public CInstruction
 			}
 		}
 
-		virtual bool Get_Resolve_Request(std::string& str) const {
+		virtual bool Get_Resolve_Request(std::string& str) const override {
 			if (mSrc.Is_Symbolic()) {
 				str = mSrc.Get_Symbol();
 				return true;
@@ -423,7 +423,7 @@ class CInstruction_Generic_1Param : public CInstruction
 			return true;
 		};
 
-		virtual bool Parse_Binary(const uint32_t instruction) {
+		virtual bool Parse_Binary(const uint32_t instruction) override {
 			auto bytes = Decode_From_Bytes(instruction);
 
 			if (!Is_Immediate_Instruction()) {
@@ -438,7 +438,7 @@ class CInstruction_Generic_1Param : public CInstruction
 			return true;
 		};
 
-		virtual std::string Generate_String(bool hexaFmt) const {
+		virtual std::string Generate_String(bool hexaFmt) const override {
 			return Opcode_To_Mnemonic.find(Get_Opcode())->second + (mCondition == NCondition::always ? "" : ("." + Cond_To_Mnemonic.find(Get_Condition())->second)) + " " +
 				(mSrc.Is_Immediate()
 					?
@@ -447,7 +447,7 @@ class CInstruction_Generic_1Param : public CInstruction
 					(mSrc.Is_Symbolic() ? "$" + mSrc.Get_Symbol() : Register_To_Mnemonic.find(mSrc.Get_Register())->second));
 		};
 
-		virtual uint32_t Generate_Binary() const {
+		virtual uint32_t Generate_Binary() const override {
 			if (mSrc.Is_Immediate()) {
 				if (mSrc.Get_Immediate() > std::numeric_limits<int16_t>::max() || mSrc.Get_Immediate() < std::numeric_limits<int16_t>::min())
 					throw sarch32_generator_exception{ "Immediate argument out of range" };
@@ -467,7 +467,7 @@ class CInstruction_Generic_1Param : public CInstruction
 			}
 		}
 
-		virtual bool Get_Resolve_Request(std::string& str) const {
+		virtual bool Get_Resolve_Request(std::string& str) const override {
 			if (mSrc.Is_Symbolic()) {
 				str = mSrc.Get_Symbol();
 				return true;
@@ -503,7 +503,7 @@ class CInstruction_1Param : public CInstruction
 			return true;
 		};
 
-		virtual bool Parse_Binary(const uint32_t instruction) {
+		virtual bool Parse_Binary(const uint32_t instruction) override {
 			auto bytes = Decode_From_Bytes(instruction);
 
 			if (NType == NOperand_Type::Register) {
@@ -517,7 +517,7 @@ class CInstruction_1Param : public CInstruction
 			return true;
 		};
 
-		virtual std::string Generate_String(bool hexaFmt) const {
+		virtual std::string Generate_String(bool hexaFmt) const override {
 			return Opcode_To_Mnemonic.find(Get_Opcode())->second + (mCondition == NCondition::always ? "" : ("." + Cond_To_Mnemonic.find(Get_Condition())->second)) + " " +
 				(mSrc.Is_Immediate()
 					?
@@ -526,7 +526,7 @@ class CInstruction_1Param : public CInstruction
 					(mSrc.Is_Symbolic() ? "$" + mSrc.Get_Symbol() : Register_To_Mnemonic.find(mSrc.Get_Register())->second));
 		};
 
-		virtual uint32_t Generate_Binary() const {
+		virtual uint32_t Generate_Binary() const override {
 			if (mSrc.Is_Immediate()) {
 
 				constexpr int32_t toplimit24b = 0x7FFFFF;
@@ -550,7 +550,7 @@ class CInstruction_1Param : public CInstruction
 			}
 		}
 
-		virtual bool Get_Resolve_Request(std::string& str) const {
+		virtual bool Get_Resolve_Request(std::string& str) const override {
 			if (mSrc.Is_Symbolic()) {
 				str = mSrc.Get_Symbol();
 				return true;
@@ -567,7 +567,7 @@ class CInstruction_Mov : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -592,7 +592,7 @@ class CInstruction_Add : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -618,7 +618,7 @@ class CInstruction_Sub : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -644,7 +644,7 @@ class CInstruction_Mul : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -670,7 +670,7 @@ class CInstruction_Div : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -704,7 +704,7 @@ class CInstruction_And : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -730,7 +730,7 @@ class CInstruction_Or : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -757,7 +757,7 @@ class CInstruction_ShiftLeft : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -783,7 +783,7 @@ class CInstruction_ShiftRight : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -809,7 +809,7 @@ class CInstruction_LoadWord : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -834,7 +834,7 @@ class CInstruction_StoreWord : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -858,7 +858,7 @@ class CInstruction_Compare : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mDst.Is_Register() || !(mSrc.Is_Immediate() || mSrc.Is_Register()))
 				return false;
@@ -919,7 +919,7 @@ class CInstruction_Branch : public CInstruction_Generic_1Param {
 			return true;
 		}
 
-		virtual std::string Generate_String(bool hexaFmt) const {
+		virtual std::string Generate_String(bool hexaFmt) const override {
 
 			auto opMnemonic = Opcode_To_Mnemonic.find(Get_Opcode())->second + (mIs_Relative ? "r" : "");
 
@@ -931,7 +931,7 @@ class CInstruction_Branch : public CInstruction_Generic_1Param {
 					(mSrc.Is_Symbolic() ? "$" + mSrc.Get_Symbol() : Register_To_Mnemonic.find(mSrc.Get_Register())->second));
 		};
 
-		virtual uint32_t Generate_Binary() const {
+		virtual uint32_t Generate_Binary() const override {
 			uint32_t bin = CInstruction_Generic_1Param::Generate_Binary();
 
 			if (mIs_Relative)
@@ -940,7 +940,7 @@ class CInstruction_Branch : public CInstruction_Generic_1Param {
 			return bin;
 		}
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mSrc.Is_Immediate() && !mSrc.Is_Register())
 				return false;
@@ -963,7 +963,7 @@ class CInstruction_Push : public CInstruction_1Param<NOperand_Type::Register> {
 	public:
 		using CInstruction_1Param<NOperand_Type::Register>::CInstruction_1Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mSrc.Is_Register())
 				return false;
@@ -985,7 +985,7 @@ class CInstruction_Pop : public CInstruction_1Param<NOperand_Type::Register> {
 	public:
 		using CInstruction_1Param<NOperand_Type::Register>::CInstruction_1Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mSrc.Is_Register())
 				return false;
@@ -1007,7 +1007,7 @@ class CInstruction_Fw : public CInstruction_1Param<NOperand_Type::Immediate> {
 	public:
 		using CInstruction_1Param<NOperand_Type::Immediate>::CInstruction_1Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mSrc.Is_Immediate())
 				return false;
@@ -1029,7 +1029,7 @@ class CInstruction_Svc : public CInstruction_1Param<NOperand_Type::Immediate> {
 	public:
 		using CInstruction_1Param<NOperand_Type::Immediate>::CInstruction_1Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			if (!mSrc.Is_Immediate())
 				return false;
@@ -1048,7 +1048,7 @@ class CInstruction_Aps : public CInstruction_Generic_2Param {
 	public:
 		using CInstruction_Generic_2Param::CInstruction_Generic_2Param;
 
-		virtual bool Execute(CCPU_Context& cpu) const {
+		virtual bool Execute(CCPU_Context& cpu) const override {
 
 			// should not happen due to encoding, but check anyways
 			if (!mDst.Is_Register() || !mSrc.Is_Immediate())
@@ -1221,9 +1221,9 @@ std::unique_ptr<CInstruction> CInstruction::Build_From_String(const std::string&
 std::unique_ptr<CInstruction> CInstruction::Build_From_Binary(const uint32_t instruction) {
 
 	// parse last byte (opcode and condition)
-	uint32_t lastByte = instruction & 0xFF;
-	NOpcode opcode = static_cast<NOpcode>(lastByte & 0b11111);
-	NCondition cond = static_cast<NCondition>(lastByte >> 5);
+	const uint32_t lastByte = instruction & 0xFF;
+	const NOpcode opcode = static_cast<NOpcode>(lastByte & 0b11111);
+	const NCondition cond = static_cast<NCondition>(lastByte >> 5);
 
 	// find factory by opcode
 	auto instr = Instruction_Factory_Map.find(opcode)->second(opcode, cond);
