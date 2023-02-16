@@ -82,7 +82,7 @@ namespace sarch32 {
 			return;
 		}
 
-		// GPIO memory connected to bus
+		// system timer memory connected to bus
 		if (address >= Timer_Memory_Start && address + size <= Timer_Memory_End) {
 
 			const uint32_t offset = (address - Timer_Memory_Start);
@@ -99,7 +99,7 @@ namespace sarch32 {
 			return;
 		}
 
-		// GPIO memory connected to bus
+		// system timer memory connected to bus
 		if (address >= Timer_Memory_Start && address + size < Timer_Memory_End) {
 			const uint32_t offset = (address - Timer_Memory_Start);
 			const size_t registerIdx = static_cast<size_t>(offset / 4);

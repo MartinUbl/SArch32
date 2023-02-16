@@ -51,15 +51,20 @@ namespace sarch32 {
 	// end of timer memory
 	constexpr uint32_t Timer_Memory_End = Timer_Memory_Start + System_Timer_Regs_Count * 4;
 
+	/*
+	 * Timer peripheral interface
+	 */
 	class ITimer {
 		public:
-			virtual void Register_Tick_Callback() = 0;
+			virtual ~ITimer() = default;
+
+			// no members for now
 	};
 
 	/*
 	 * Default system timer
 	 */
-	class CSystem_Timer : public IPeripheral, public std::enable_shared_from_this<CSystem_Timer> {
+	class CSystem_Timer : public IPeripheral, public ITimer, public std::enable_shared_from_this<CSystem_Timer> {
 
 		private:
 			// timer memory mapping

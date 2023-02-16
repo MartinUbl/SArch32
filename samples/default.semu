@@ -4,3 +4,4 @@ display = d1_monochromatic
 image = kernel.bin
 gpio = gpio64p
 timer = systimer
+uart = miniuart

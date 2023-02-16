@@ -36,7 +36,7 @@ Legend: ✅ - full support, ⏳ - partial support, ❌ - not yet implemented
 |300x200 emulated monochromatic display|✅|video memory mapped to bus|
 |GPIO controller|✅||
 |Timer|✅||
-|UART|❌||
+|UART|✅||
 |DMA|❌||
 |PCM/Audio controller|❌||
 |PWM|❌||

@@ -21,10 +21,12 @@
 #include "../core/peripherals/display.h"
 #include "../core/peripherals/gpio.h"
 #include "../core/peripherals/timer.h"
+#include "../core/peripherals/uart.h"
 
 #include "config.h"
 #include "peripherals/display_widget.h"
 #include "peripherals/gpio_widget.h"
+#include "peripherals/uart_widget.h"
 
 /*
  * Emulator main window
@@ -42,8 +44,10 @@ class CMain_Window : public QMainWindow {
 		QTextEdit* mDisassembly;
 		// 300x200 display
 		CDisplay_Widget* mDisplay_Widget;
-		// 300x200 display
+		// GPIO widget
 		CGPIO_Widget* mGPIO_Widget;
+		// UART widget
+		CUART_Widget* mUART_Widget;
 		// step button
 		QPushButton* mStep_Button;
 		// run button
@@ -60,9 +64,11 @@ class CMain_Window : public QMainWindow {
 		// display peripheral
 		std::shared_ptr<sarch32::CDisplay_300x200> mDisplay;
 		// GPIO controller peripheral
-		std::shared_ptr<sarch32::CGPIO_Controller> mGPIO_Ctl;
+		std::shared_ptr<sarch32::IGPIO_Controller> mGPIO_Ctl;
 		// timer peripheral
-		std::shared_ptr<sarch32::CSystem_Timer> mTimer_Ctl;
+		std::shared_ptr<sarch32::ITimer> mTimer_Ctl;
+		// UART peripheral
+		std::shared_ptr<sarch32::IUART_Controller> mUART_Ctl;
 
 		// structure helper for finding the location of PC
 		struct TSection_Break {

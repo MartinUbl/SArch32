@@ -66,6 +66,15 @@ bool CMain_Window::Setup_Machine(const CConfig& config) {
 				return false;
 			}
 		}
+		else if (p.first == "uart") {
+			if (p.second == "default" || p.second == "miniuart") {
+				mUART_Ctl = mMachine->Attach_Peripheral<sarch32::CMiniUART>();
+			}
+			else {
+				QMessageBox::critical(nullptr, "Error", tr("Unknown UART controller: {}").arg(QString::fromStdString(p.second)));
+				return false;
+			}
+		}
 		else {
 			QMessageBox::critical(nullptr, "Error", tr("Unknown peripheral: {}").arg(QString::fromStdString(p.first)));
 			return false;
@@ -254,6 +263,11 @@ void CMain_Window::On_Step_Requested() {
 		mDisplay_Widget->Trigger_Repaint(mDisplay, mMachine->Get_Memory_Bus());
 	}
 
+	// request UART update
+	if (mUART_Ctl && mUART_Widget) {
+		mUART_Widget->Update_Console();
+	}
+
 	statusBar()->showMessage(tr("Step complete"));
 }
 
@@ -310,8 +324,14 @@ void CMain_Window::Run_Thread_Fnc() {
 
 		mMachine->Step(1, true);
 
+		// request display update
 		if (mDisplay && mDisplay->Is_Video_Memory_Changed()) {
 			emit Request_Repaint();
+		}
+
+		// request UART update
+		if (mUART_Ctl && mUART_Widget) {
+			mUART_Widget->Update_Console();
 		}
 
 		// detect stalling - an infinite loop
@@ -519,6 +539,20 @@ void CMain_Window::Setup_GUI() {
 				}
 
 				rlay->addWidget(gpio);
+			}
+
+			if (mUART_Ctl) {
+				QGroupBox* uart = new QGroupBox("UART", rpanel);
+				QHBoxLayout* uartlay = new QHBoxLayout();
+				{
+					uart->setLayout(uartlay);
+
+					mUART_Widget = new CUART_Widget(mUART_Ctl, uart);
+					mUART_Widget->Setup_GUI();
+					uartlay->addWidget(mUART_Widget, Qt::AlignHCenter);
+				}
+
+				rlay->addWidget(uart);
 			}
 
 			rlay->addStretch(1);
